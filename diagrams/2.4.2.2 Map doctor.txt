@@ -1,0 +1,14 @@
+@startuml Карта сайта клиники
+title Карта клиентской части ИС (администратор)
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam ranksep 50
+
+[Главная] --> [Пациенты]
+[Главная] --> [Расписание]
+[Главная] --> [Настройки]
+
+[Пациенты] --> [Карточка\nпациента]
+
+@enduml

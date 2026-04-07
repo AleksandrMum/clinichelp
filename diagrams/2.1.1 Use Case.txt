@@ -1,0 +1,35 @@
+@startuml Структура ИС: Use Cases
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+actor "Администратор" as Admin
+actor "Врач" as Doctor
+
+rectangle "ИС Регистратуры" {
+  usecase "Аутентификация (ФТ20)" as UC1
+  usecase "Просмотр расписания (ФТ10,14)" as UC2
+  
+  usecase "Поиск пациента (ФТ2)" as UC3
+  usecase "Создать запись (ФТ4-6)" as UC4
+  usecase "Поиск слотов (ФТ11)" as UC5
+  usecase "Перенос/Отмена записи (ФТ7-9)" as UC6
+  usecase "Список записей для\nнапоминаний (ФТ15)" as UC7
+  usecase "Аудит действий (ФТ21-23)" as UC8
+}
+
+Doctor -[#hide]-- UC1
+Doctor -[#hide]-- UC2
+
+Admin -[#hide]down- UC1
+Admin -[#hide]up-- UC5
+Admin -[#hide]-- UC2
+Admin -[#hide]-- UC3
+Admin -[#hide]-- UC4
+Admin -[#hide]-- UC6
+Admin -[#hide]-- UC7
+Admin -[#hide]-- UC8
+
+UC4 .> UC3 : <<include>>
+UC4 .> UC5 : <<include>>
+@enduml

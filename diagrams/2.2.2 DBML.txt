@@ -1,0 +1,79 @@
+// Концептуальная модель БД системы записи на прием к врачу
+// Использует UUID в качестве первичных ключей для распределенной архитектуры
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  full_name varchar
+  login varchar [unique]
+  password_hash varchar
+  role varchar [note: 'enum(Администратор, Врач)']
+  phone varchar
+  is_active boolean
+}
+
+Table patients {
+  id uuid [pk, default: `gen_random_uuid()`]
+  full_name varchar
+  phone varchar
+  birth_date date
+  notes text
+}
+
+Table services {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar
+  duration_min int [note: 'минуты']
+  price decimal
+  is_available boolean
+}
+
+Table schedule_rules {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doctor_id uuid [not null]
+  weekday int [note: '0-6 (Пн-Вс)']
+  start_time time
+  end_time time
+}
+
+Table schedule_exceptions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  doctor_id uuid [not null]
+  start_at timestamp
+  end_at timestamp
+  exception_type varchar [note: 'enum(Выходной, Доп_смена)']
+  comment text
+}
+
+Table appointments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  patient_id uuid [not null]
+  doctor_id uuid [not null]
+  service_id uuid [not null]
+  start_at timestamp
+  end_at timestamp
+  status varchar [note: 'enum(Создана, Подтверждена, Проведена, Отменена)']
+  booked_price decimal [note: 'Фиксируем цену на момент записи для отчетности']
+  comment text
+}
+
+Table audit_log {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  action_type varchar
+  entity_type varchar
+  entity_id uuid
+  action_time timestamp
+  details json
+}
+
+// Связи расписания
+Ref: schedule_rules.doctor_id > users.id
+Ref: schedule_exceptions.doctor_id > users.id
+
+// Связи записи на прием
+Ref: appointments.patient_id > patients.id
+Ref: appointments.service_id > services.id
+Ref: appointments.doctor_id > users.id
+
+// Аудит
+Ref: audit_log.user_id > users.id

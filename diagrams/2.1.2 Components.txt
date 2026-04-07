@@ -1,0 +1,43 @@
+@startuml Структура ИС: Компоненты
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype polyline
+
+package "Клиент (UI)" {
+  [Интерфейс Врача] as DoctorUI
+  [Интерфейс Админа] as AdminUI
+}
+
+package "Сервер (бизнес-логика)" {
+  component [Аутентификация и Аудит] as AuthSvc
+  component [Сервис Расписания] as ScheduleSvc
+  component [Сервис Пациентов] as PatientSvc
+  component [Сервис Записей] as AppointmentSvc
+  component [Сервис Прейскуранта] as ServiceSvc
+}
+
+database "База Данных" {
+  [Аудит] as DB_Audit
+  [Расписание] as DB_Schedules
+  [Пациенты] as DB_Patients
+  [Записи] as DB_Appointments
+  [Прейскурант] as DB_Services
+}
+
+DoctorUI ---> AuthSvc
+DoctorUI ---> ScheduleSvc
+AdminUI ---> AuthSvc
+AdminUI ---> PatientSvc
+AdminUI ---> AppointmentSvc
+AdminUI ---> ScheduleSvc
+AdminUI ---> ServiceSvc
+
+PatientSvc --> DB_Patients
+AppointmentSvc --> DB_Appointments
+AppointmentSvc --> DB_Patients
+ScheduleSvc --> DB_Schedules
+ScheduleSvc --> DB_Appointments
+AuthSvc --> DB_Audit
+ServiceSvc --> DB_Services
+
+@enduml
