@@ -1,5 +1,5 @@
 @startuml Карта сайта клиники
-title Карта клиентской части ИС (администратор)
+title Карта клиентской части ИС (врач)
 
 skinparam componentStyle rectangle
 skinparam linetype ortho

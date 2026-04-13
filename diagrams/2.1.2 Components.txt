@@ -1,43 +1,50 @@
-@startuml Структура ИС: Компоненты
+@startuml Components
 !theme plain
 skinparam componentStyle rectangle
 skinparam linetype polyline
 
 package "Клиент (UI)" {
   [Интерфейс Врача] as DoctorUI
-  [Интерфейс Админа] as AdminUI
+  [Интерфейс Менеджера] as ManagerUI
+  [Интерфейс Администратора] as AdminUI
 }
 
 package "Сервер (бизнес-логика)" {
-  component [Аутентификация и Аудит] as AuthSvc
+  component [Аутентификация] as AuthSvc
   component [Сервис Расписания] as ScheduleSvc
   component [Сервис Пациентов] as PatientSvc
   component [Сервис Записей] as AppointmentSvc
   component [Сервис Прейскуранта] as ServiceSvc
+  component [Сервис Аудита] as AuditSvc
 }
 
 database "База Данных" {
-  [Аудит] as DB_Audit
   [Расписание] as DB_Schedules
   [Пациенты] as DB_Patients
   [Записи] as DB_Appointments
   [Прейскурант] as DB_Services
+  [Пользователи] as DB_Auth
+  [Аудит] as DB_Audit
 }
 
 DoctorUI ---> AuthSvc
 DoctorUI ---> ScheduleSvc
+ManagerUI ---> AuthSvc
+ManagerUI ---> PatientSvc
+ManagerUI ---> AppointmentSvc
+ManagerUI ---> ScheduleSvc
+ManagerUI ---> ServiceSvc
 AdminUI ---> AuthSvc
-AdminUI ---> PatientSvc
-AdminUI ---> AppointmentSvc
-AdminUI ---> ScheduleSvc
-AdminUI ---> ServiceSvc
+AdminUI ---> AuditSvc
 
-PatientSvc --> DB_Patients
-AppointmentSvc --> DB_Appointments
-AppointmentSvc --> DB_Patients
-ScheduleSvc --> DB_Schedules
-ScheduleSvc --> DB_Appointments
-AuthSvc --> DB_Audit
-ServiceSvc --> DB_Services
+PatientSvc ---> DB_Patients
+AppointmentSvc ---> DB_Appointments
+AppointmentSvc ---> DB_Patients
+AppointmentSvc ---> DB_Schedules
+ScheduleSvc ---> DB_Schedules
+ScheduleSvc ---> DB_Appointments
+AuthSvc ---> DB_Auth
+AuditSvc ---> DB_Audit
+ServiceSvc ---> DB_Services
 
 @enduml

@@ -1,35 +1,52 @@
-@startuml Структура ИС: Use Cases
+@startuml UseCases
 left to right direction
 skinparam packageStyle rectangle
 skinparam linetype ortho
 
-actor "Администратор" as Admin
 actor "Врач" as Doctor
+actor "Администратор" as Admin
+actor "Менеджер" as Manager  
 
-rectangle "ИС Регистратуры" {
-  usecase "Аутентификация (ФТ20)" as UC1
-  usecase "Просмотр расписания (ФТ10,14)" as UC2
+rectangle "ИС Регистратуры Клиники" {
   
-  usecase "Поиск пациента (ФТ2)" as UC3
-  usecase "Создать запись (ФТ4-6)" as UC4
-  usecase "Поиск слотов (ФТ11)" as UC5
-  usecase "Перенос/Отмена записи (ФТ7-9)" as UC6
-  usecase "Список записей для\nнапоминаний (ФТ15)" as UC7
-  usecase "Аудит действий (ФТ21-23)" as UC8
+  usecase "Управление пациентами\n(ФТ1)" as UC_Patients
+  usecase "Просмотр пациентов\n(ФТ2-3)" as UC_Patients_View
+  
+  usecase "Управление записями\n(ФТ4-9)" as UC_Appointments
+  
+  usecase "Управление графиком\nврачей (ФТ11-13)" as UC_ScheduleManage
+  usecase "Просмотр расписания\n(ФТ10,14)" as UC_ScheduleView
+  
+  usecase "Получение списка записей\nдля напоминаний (ФТ15)" as UC_DailyList
+  
+  usecase "Справочник услуг\n(ФТ16)" as UC_Services
+  
+  usecase "Управление пользователями\n(ФТ17-19)" as UC_Users
+  usecase "Аутентификация\n(ФТ20)" as UC_Auth
+  
+  usecase "Журнал аудита\n(ФТ21-23)" as UC_Audit
+
 }
 
-Doctor -[#hide]-- UC1
-Doctor -[#hide]-- UC2
+Doctor -[#hide]-> UC_Patients_View
+Doctor -[#hide]-> UC_ScheduleView
+Doctor -[#hide]-> UC_Auth
 
-Admin -[#hide]down- UC1
-Admin -[#hide]up-- UC5
-Admin -[#hide]-- UC2
-Admin -[#hide]-- UC3
-Admin -[#hide]-- UC4
-Admin -[#hide]-- UC6
-Admin -[#hide]-- UC7
-Admin -[#hide]-- UC8
+Admin -[#hide]-> UC_Users
+Admin -[#hide]-> UC_Auth
+Admin -[#hide]-> UC_Audit
 
-UC4 .> UC3 : <<include>>
-UC4 .> UC5 : <<include>>
+UC_Patients <-[#hide]- Manager
+UC_Patients_View <-[#hide]- Manager
+UC_Appointments <-[#hide]- Manager
+UC_ScheduleManage <-[#hide]- Manager
+UC_ScheduleView <-[#hide]- Manager
+UC_DailyList <-[#hide]- Manager
+UC_Services <-[#hide]- Manager
+UC_Auth <-[#hide]- Manager
+
+UC_Appointments .> UC_Patients_View : <<include>>
+UC_Appointments .> UC_ScheduleView : <<include>>
+UC_ScheduleManage .> UC_ScheduleView : <<include>>
+
 @enduml

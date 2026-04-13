@@ -6,7 +6,7 @@ Table users {
   full_name varchar
   login varchar [unique]
   password_hash varchar
-  role varchar [note: 'enum(Администратор, Врач)']
+  role varchar [note: 'enum(Администратор, Врач, Менеджер)']
   phone varchar
   is_active boolean
 }
