@@ -13,6 +13,7 @@ export function Sidebar() {
           <NavLink
             key={link.to}
             to={link.to}
+            end={Boolean(link.exact)}
             className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
           >
             {link.label}
