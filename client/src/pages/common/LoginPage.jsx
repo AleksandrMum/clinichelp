@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
-import { getDefaultRoute } from '../../router/navigation'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -20,7 +19,7 @@ export function LoginPage() {
       return
     }
 
-    navigate(getDefaultRoute(loggedUser.role), { replace: true })
+    navigate('/home')
   }
 
   return (

@@ -24,13 +24,5 @@ export const NAVIGATION_BY_ROLE = {
 }
 
 export function getDefaultRoute(role) {
-  if (role === ROLES.ADMIN) {
-    return '/admin/clinic'
-  }
-
-  if (role === ROLES.DOCTOR) {
-    return '/doctor/schedule'
-  }
-
-  return '/manager/schedule'
+  return '/home'
 }

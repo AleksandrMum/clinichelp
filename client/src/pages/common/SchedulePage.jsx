@@ -118,6 +118,7 @@ export function SchedulePage() {
   const [focusedDayKey, setFocusedDayKey] = useState(WEEK_DAYS[0].date)
   const [selectedEventId, setSelectedEventId] = useState(WEEK_EVENTS[0].id)
   const [scheduleMessage, setScheduleMessage] = useState('')
+  const [showSummary, setShowSummary] = useState(false)
 
   const activeDoctor = isDoctor ? 'Смирнов Артем Игоревич' : selectedDoctor
 
@@ -215,10 +216,10 @@ export function SchedulePage() {
         </div>
       </div>
 
-      <div className="schedule-toolbar admin-panel">
-        {!isDoctor ? (
-          <label className="schedule-filter">
-            <span>Врач</span>
+      {!isDoctor ? (
+        <div className="schedule-toolbar admin-panel">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span>Врач:</span>
             <select value={selectedDoctor} onChange={(event) => setSelectedDoctor(event.target.value)}>
               {DOCTORS.map((doctor) => (
                 <option key={doctor} value={doctor}>
@@ -226,26 +227,18 @@ export function SchedulePage() {
                 </option>
               ))}
             </select>
-          </label>
-        ) : null}
-
-        <div className="schedule-legend">
-          <span>
-            <i className="legend-dot free" /> Свободно
-          </span>
-          <span>
-            <i className="legend-dot busy" /> Занято
-          </span>
-          <span>
-            <i className="legend-dot unavailable" /> Недоступно
-          </span>
-          <span>
-            <i className="legend-dot buffer" /> Буфер
-          </span>
+          </div>
         </div>
+      ) : null}
+
+      <div style={{ marginTop: '0.6rem' }}>
+        <button type="button" className="text-button" onClick={() => setShowSummary((s) => !s)}>
+          {showSummary ? 'Скрыть краткую статистику' : 'Открыть краткую статистику'}
+        </button>
       </div>
 
-      <div className="schedule-summary">
+      {showSummary ? (
+        <div className="schedule-summary">
         <article className="stat-card">
           <p className="stat-label">Свободные часы</p>
           <p className="stat-value">{Math.round(totalFreeMinutes / 60)}</p>
@@ -266,6 +259,19 @@ export function SchedulePage() {
           <p className="stat-value">{Math.round(totalUnavailableMinutes / 60)}</p>
           <p className="stat-hint">исключения</p>
         </article>
+        </div>
+      ) : null}
+
+      <div className="schedule-legend" style={{ marginTop: '0.5rem' }}>
+        <span>
+          <i className="legend-dot free" /> Свободно
+        </span>
+        <span>
+          <i className="legend-dot busy" /> Занято
+        </span>
+        <span>
+          <i className="legend-dot unavailable" /> Недоступно
+        </span>
       </div>
 
       <div className="schedule-week-shell">
@@ -387,7 +393,7 @@ export function SchedulePage() {
           <span className="panel-muted">{focusedDay ? `${focusedDay.day} • ${focusedDay.label}` : 'День не выбран'}</span>
         </div>
         <p className="panel-feedback">
-          {scheduleMessage || 'Выберите запись в сетке, чтобы открыть всплывающие детали рядом с приемом.'}
+          {scheduleMessage || 'Выберите запись в сетке, чтобы открыть подробности приема.'}
         </p>
       </article>
     </section>

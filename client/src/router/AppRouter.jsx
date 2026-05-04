@@ -10,7 +10,6 @@ import { ForbiddenPage } from '../pages/common/ForbiddenPage'
 import { HomePage } from '../pages/common/HomePage'
 import { LoginPage } from '../pages/common/LoginPage'
 import { NotFoundPage } from '../pages/common/NotFoundPage'
-import { PatientCardPage } from '../pages/common/PatientCardPage'
 import { PatientsPage } from '../pages/common/PatientsPage'
 import { SchedulePage } from '../pages/common/SchedulePage'
 import { SettingsPage } from '../pages/common/SettingsPage'
@@ -19,7 +18,6 @@ import { ManagerCreateAppointmentPage } from '../pages/manager/ManagerCreateAppo
 import { ManagerCreatePatientPage } from '../pages/manager/ManagerCreatePatientPage'
 import { ManagerEditSchedulePage } from '../pages/manager/ManagerEditSchedulePage'
 import { ManagerServicesPage } from '../pages/manager/ManagerServicesPage'
-import { getDefaultRoute } from './navigation'
 
 function RoleRoute({ roles, children }) {
   const { user } = useAuth()
@@ -45,7 +43,7 @@ export function AppRouter() {
           path="/login"
           element={
             isAuthenticated ? (
-              <Navigate to={getDefaultRoute(user.role)} replace />
+              <Navigate to='/home' replace />
             ) : (
               <LoginPage />
             )
@@ -71,14 +69,6 @@ export function AppRouter() {
           element={
             <RoleRoute roles={[ROLES.MANAGER]}>
               <ManagerCreatePatientPage />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/manager/patients/card"
-          element={
-            <RoleRoute roles={[ROLES.MANAGER]}>
-              <PatientCardPage />
             </RoleRoute>
           }
         />
