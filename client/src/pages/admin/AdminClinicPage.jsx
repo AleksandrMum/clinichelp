@@ -1,42 +1,6 @@
 import { useState } from 'react'
-
-const BRANCHES = [
-  {
-    id: 'b-1',
-    name: 'Филиал на Октябрьской',
-    address: 'ул. Октябрьска, 145',
-    phone: '+7 (900) 000-00-01',
-    schedule: '08:00 - 20:00',
-    manager: 'Зайцева Ольга Николаевна',
-  },
-  {
-    id: 'b-2',
-    name: 'Филиал на Глушко',
-    address: 'ул. Антона Глушко, 42',
-    phone: '+7 (900) 000-00-02',
-    schedule: '09:00 - 21:00',
-    manager: 'Иванова Марина Павловна',
-  },
-]
-
-const USERS = [
-  { id: 'u-101', name: 'Иванова Марина Павловна', role: 'Менеджер' },
-  { id: 'u-102', name: 'Смирнов Артем Игоревич', role: 'Врач' },
-  { id: 'u-103', name: 'Зайцева Ольга Николаевна', role: 'Администратор' },
-  { id: 'u-104', name: 'Кузнецов Павел Андреевич', role: 'Врач' },
-]
-
-const INITIAL_BRANCH = {
-  name: '',
-  address: '',
-  phone: '+7',
-  schedule: '09:00 - 18:00',
-}
-
-const INITIAL_ASSIGNMENT = {
-  user: 'u-101',
-  branch: 'b-1',
-}
+// TEMP: временные заглушки данных для интерфейса — удалить при подключении реального бэкенда
+import { BRANCHES, USERS, INITIAL_BRANCH, INITIAL_ASSIGNMENT } from '../TEMP/adminClinicMocks'
 
 export function AdminClinicPage() {
   const [branchForm, setBranchForm] = useState(INITIAL_BRANCH)

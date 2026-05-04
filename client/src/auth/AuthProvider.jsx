@@ -3,26 +3,9 @@ import { ROLES } from './roles'
 
 const STORAGE_KEY = 'clinichelp.auth'
 
-const MOCK_USERS = {
-  admin: {
-    username: 'admin',
-    password: 'admin',
-    role: ROLES.ADMIN,
-    fullName: 'Системный администратор',
-  },
-  doctor: {
-    username: 'doctor',
-    password: 'doctor',
-    role: ROLES.DOCTOR,
-    fullName: 'Дежурный врач',
-  },
-  manager: {
-    username: 'manager',
-    password: 'manager',
-    role: ROLES.MANAGER,
-    fullName: 'Менеджер регистратуры',
-  },
-}
+// ВРЕМЕННЫЙ: импорт заглушек данных для разработки интерфейса.
+// Удалить этот импорт при подключении реального бэкенда.
+import { MOCK_USERS } from '../pages/TEMP/authMocks'
 
 const AuthContext = createContext(null)
 
