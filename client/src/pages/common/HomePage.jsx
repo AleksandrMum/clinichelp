@@ -18,7 +18,7 @@ const MANAGER_STATS = [
 const DOCTOR_STATS = [
   { label: 'Пациенты', value: '34', hint: '4 ожидают приема', to: '/doctor/patients' },
   { label: 'Приемы сегодня', value: '11', hint: '2 перерыва', to: '/doctor/schedule' },
-  { label: 'Карточки пациентов', value: '9', hint: 'доступны для просмотра', to: '/doctor/patients/card' },
+  { label: 'Карточки пациентов', value: '9', hint: 'доступны внутри раздела пациентов', to: '/doctor/patients' },
   { label: 'Настройки профиля', value: '1', hint: 'личные параметры', to: '/settings' },
 ]
 

@@ -411,6 +411,474 @@ input {
   gap: 1rem;
 }
 
+.doctor-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.schedule-week-shell {
+  display: grid;
+  gap: 0;
+  border: 1px solid #dce2ec;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.schedule-week-header {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(130px, 1fr));
+  background: #f6f8fc;
+  border-bottom: 1px solid #dce2ec;
+  min-width: 0;
+}
+
+.schedule-time-header,
+.day-header {
+  padding: 0.55rem 0.6rem;
+}
+
+.schedule-time-header {
+  border-right: 1px solid #dce2ec;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  color: #59637a;
+  font-size: 0.88rem;
+}
+
+.day-header {
+  text-align: left;
+  border: none;
+  border-left: 1px solid #dce2ec;
+  background: transparent;
+  color: inherit;
+  display: grid;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.day-header.active {
+  background: #eaf2ff;
+}
+
+.day-header-title {
+  font-weight: 700;
+  color: #14305f;
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.schedule-week-body {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(130px, 1fr));
+  min-width: 0;
+}
+
+.time-rail {
+  display: grid;
+  grid-template-rows: repeat(10, var(--hour-height));
+  border-right: 1px solid #dce2ec;
+  background: #fbfcff;
+}
+
+.time-rail-label {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.25rem;
+  color: #6a7488;
+  font-size: 0.8rem;
+}
+
+.day-column {
+  position: relative;
+  min-height: calc(var(--hour-height) * 10);
+  border-left: 1px solid #dce2ec;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #ffffff 0,
+      #ffffff calc(var(--hour-height) - 1px),
+      #edf2fb calc(var(--hour-height) - 1px),
+      #edf2fb var(--hour-height)
+    );
+}
+
+.day-column.off {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #f6f8fc 0,
+      #f6f8fc calc(var(--hour-height) - 1px),
+      #e9eef6 calc(var(--hour-height) - 1px),
+      #e9eef6 var(--hour-height)
+    );
+}
+
+.day-hour-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.availability-window {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  border-radius: 0.45rem;
+  background: rgba(223, 244, 231, 0.5);
+  border: 1px solid rgba(161, 214, 181, 0.9);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.calendar-event {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid #dce2ec;
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.45rem;
+  color: #1d2433;
+  text-align: left;
+  display: grid;
+  gap: 0.12rem;
+  box-shadow: 0 6px 16px rgba(13, 24, 43, 0.08);
+  overflow: hidden;
+}
+
+.calendar-event.active {
+  outline: 2px solid rgba(31, 95, 184, 0.25);
+}
+
+.calendar-event.busy {
+  background: #fff0ee;
+  border-left: 4px solid #e05d4f;
+}
+
+.calendar-event.buffer {
+  background: #fff5df;
+  border-left: 4px solid #d59b2e;
+}
+
+.calendar-event.unavailable {
+  background: #eef2f7;
+  border-left: 4px solid #8b95a8;
+}
+
+.event-time {
+  font-size: 0.62rem;
+  color: #59637a;
+}
+
+.event-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #14305f;
+  line-height: 1.18;
+}
+
+.event-line,
+.event-note {
+  font-size: 0.62rem;
+  color: #2e374a;
+  line-height: 1.15;
+}
+
+.event-note {
+  color: #59637a;
+}
+
+.event-popover {
+  position: absolute;
+  z-index: 3;
+  width: 220px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #dce2ec;
+  border-radius: 0.6rem;
+  background: #ffffff;
+  box-shadow: 0 16px 32px rgba(13, 24, 43, 0.18);
+  display: grid;
+  gap: 0.28rem;
+}
+
+.event-popover.left {
+  text-align: left;
+}
+
+.event-popover p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #2e374a;
+}
+
+.event-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.event-popover-head strong {
+  font-size: 0.9rem;
+  color: #14305f;
+}
+
+.event-popover-status {
+  color: #59637a;
+  font-size: 0.78rem;
+}
+
+.schedule-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 1rem;
+}
+
+.schedule-week-shell {
+  max-width: 100%;
+}
+
+.doctor-page-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.doctor-page-head h1 {
+  margin-bottom: 0.35rem;
+}
+
+.doctor-head-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: flex-end;
+}
+
+.doctor-toolbar,
+.schedule-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.doctor-search,
+.schedule-filter {
+  display: grid;
+  gap: 0.35rem;
+  color: #2e374a;
+  font-size: 0.94rem;
+}
+
+.doctor-search input,
+.schedule-filter select {
+  border: 1px solid #cdd5e3;
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  background: #ffffff;
+}
+
+.filter-chip-row,
+.schedule-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filter-chip {
+  border: 1px solid #cdd5e3;
+  background: #ffffff;
+  color: #2e374a;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+}
+
+.filter-chip.active {
+  border-color: #1f5fb8;
+  background: #e5f0ff;
+  color: #0f4ca4;
+}
+
+.schedule-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #59637a;
+  font-size: 0.9rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.free,
+.slot-card.free {
+  background: #dff4e7;
+}
+
+.legend-dot.busy,
+.slot-card.busy {
+  background: #ffe4e1;
+}
+
+.legend-dot.unavailable,
+.slot-card.unavailable {
+  background: #eef2f7;
+}
+
+.legend-dot.buffer,
+.slot-card.buffer {
+  background: #fff0d9;
+}
+
+.schedule-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.doctor-patients-layout,
+.schedule-grid-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.9fr);
+  gap: 1rem;
+}
+
+.doctor-list-panel,
+.doctor-detail-panel,
+.schedule-grid-panel,
+.schedule-detail-panel {
+  border: 1px solid #dce2ec;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #fbfcff;
+}
+
+.patient-list,
+.history-list,
+.schedule-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.patient-card {
+  width: 100%;
+  border: 1px solid #dce2ec;
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  background: #ffffff;
+  display: grid;
+  gap: 0.6rem;
+  text-align: left;
+  color: inherit;
+}
+
+.patient-card.active {
+  border-color: #1f5fb8;
+  background: #eef5ff;
+}
+
+.patient-card-meta {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.detail-block,
+.detail-history {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.detail-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1d2433;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.detail-actions-secondary {
+  margin-top: 0.1rem;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid #dce2ec;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  background: #ffffff;
+}
+
+.schedule-grid-panel h2,
+.schedule-detail-panel h2,
+.doctor-detail-panel h2,
+.doctor-list-panel h2 {
+  margin: 0;
+}
+
+.slot-card {
+  border: 1px solid #dce2ec;
+  border-radius: 0.65rem;
+  padding: 0.8rem;
+  background: #ffffff;
+  display: grid;
+  gap: 0.3rem;
+  text-align: left;
+}
+
+.slot-card.active {
+  outline: 2px solid rgba(31, 95, 184, 0.24);
+}
+
+.slot-time {
+  font-weight: 700;
+  color: #14305f;
+}
+
+.slot-main {
+  color: #1d2433;
+  font-weight: 600;
+}
+
+.slot-sub {
+  color: #59637a;
+  font-size: 0.9rem;
+}
+
+.schedule-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.status-pill {
+  justify-self: start;
+}
+
+.panel-feedback {
+  margin: 0.8rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border-left: 3px solid #1f5fb8;
+  background: #eef5ff;
+  color: #1f365f;
+  border-radius: 0.45rem;
+}
+
 .stat-link-card {
   display: block;
   text-decoration: none;
@@ -602,5 +1070,45 @@ button:hover {
 
   .item-actions {
     align-items: stretch;
+  }
+
+  .doctor-patients-layout,
+  .schedule-grid-layout,
+  .schedule-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-head-actions,
+  .schedule-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doctor-page-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doctor-head-actions {
+    align-items: flex-start;
+  }
+
+  .schedule-week-shell,
+  .schedule-week-header,
+  .schedule-week-body {
+    min-width: 0;
+  }
+
+  .schedule-week-header,
+  .schedule-week-body {
+    grid-template-columns: 44px repeat(7, minmax(108px, 1fr));
+  }
+
+  .schedule-week-shell {
+    overflow-x: auto;
+  }
+
+  .schedule-detail-grid {
+    grid-template-columns: 1fr;
   }
 }

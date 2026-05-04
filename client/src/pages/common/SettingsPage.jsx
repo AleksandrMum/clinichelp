@@ -15,6 +15,11 @@ function toDisplayRole(role) {
 
 export function SettingsPage() {
   const { user } = useAuth()
+  const title = user?.role === 'doctor' ? 'Настройки врача' : 'Настройки пользователя'
+  const subtitle =
+    user?.role === 'doctor'
+      ? 'Личный раздел врача: профиль, изображение и пароль.'
+      : 'Личный раздел для каждого сотрудника: данные профиля, изображение и смена пароля.'
   const initialProfile = useMemo(
     () => ({
       fullName: user?.fullName ?? '',
@@ -78,10 +83,8 @@ export function SettingsPage() {
 
   return (
     <section className="content-card admin-page">
-      <h1>Настройки пользователя</h1>
-      <p>
-        Личный раздел для каждого сотрудника: данные профиля, изображение и смена пароля.
-      </p>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
 
       <div className="admin-grid">
         <article className="admin-panel">
@@ -123,14 +126,6 @@ export function SettingsPage() {
                 type="email"
                 value={profile.email}
                 onChange={(event) => onProfileChange('email', event.target.value)}
-              />
-            </label>
-
-            <label>
-              Описание
-              <textarea
-                value={profile.notes}
-                onChange={(event) => onProfileChange('notes', event.target.value)}
               />
             </label>
 

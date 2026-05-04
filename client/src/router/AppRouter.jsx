@@ -132,14 +132,6 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/doctor/patients/card"
-          element={
-            <RoleRoute roles={[ROLES.DOCTOR]}>
-              <PatientCardPage />
-            </RoleRoute>
-          }
-        />
-        <Route
           path="/doctor/schedule"
           element={
             <RoleRoute roles={[ROLES.DOCTOR]}>
