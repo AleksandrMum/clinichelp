@@ -667,6 +667,38 @@ input {
   align-items: end;
 }
 
+.exception-scope-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.exception-scope-grid-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.exception-scope-grid-top,
+.exception-scope-grid-bottom {
+  min-width: 0;
+}
+
+.exception-scope-grid-top {
+  align-items: end;
+}
+
+.exception-scope-grid-bottom {
+  align-items: start;
+  padding-left: 0.05rem;
+}
+
+.exception-scope-select {
+  min-width: 220px;
+  width: 100%;
+  max-width: 100%;
+}
+
 .doctor-search,
 .schedule-filter {
   display: grid;
@@ -681,6 +713,12 @@ input {
   border-radius: 0.45rem;
   padding: 0.55rem 0.65rem;
   background: #ffffff;
+}
+
+.exception-search-inline {
+  min-width: 240px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .filter-chip-row,
@@ -814,6 +852,51 @@ input {
 
 .detail-actions-secondary {
   margin-top: 0.1rem;
+}
+
+.exception-form-stack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.exception-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.exception-field span {
+  color: #2e374a;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.exception-field input,
+.exception-field select,
+.exception-field textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #cdd5e3;
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.6rem;
+  background: #ffffff;
+  color: #1d2433;
+}
+
+.exception-field textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.exception-field input[readonly],
+.exception-field textarea[readonly],
+.exception-field select:disabled {
+  background: #f5f7fb;
+  color: #5f6b80;
+}
+
+.exception-list-target {
+  margin: -0.2rem 0 0.7rem;
 }
 
 .history-item {

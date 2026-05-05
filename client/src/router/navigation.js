@@ -5,7 +5,14 @@ export const NAVIGATION_BY_ROLE = {
     { label: 'Главная', to: '/home' },
     { label: 'Пациенты', to: '/manager/patients' },
     { label: 'Расписание', to: '/manager/schedule' },
-    { label: 'Клиника', to: '/manager/clinic' },
+    {
+      label: 'Клиника',
+      to: '/manager/clinic',
+      submenu: [
+        { label: 'Услуги', to: '/manager/clinic/services' },
+        { label: 'Исключения расписания', to: '/manager/clinic/schedule-exceptions' },
+      ],
+    },
     { label: 'Настройки', to: '/settings' },
   ],
   [ROLES.DOCTOR]: [

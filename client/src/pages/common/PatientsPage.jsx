@@ -86,7 +86,10 @@ export function PatientsPage() {
                 key={patient.id}
                 type="button"
                 className={patient.id === selectedPatient?.id ? 'patient-card active' : 'patient-card'}
-                onClick={() => { setSelectedPatientId(patient.id); setCardMessage('') }}
+                onClick={() => {
+                  setSelectedPatientId((currentPatientId) => (currentPatientId === patient.id ? null : patient.id))
+                  setCardMessage('')
+                }}
                 style={{ padding: '0.5rem 0.6rem' }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
