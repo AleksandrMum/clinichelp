@@ -6,6 +6,7 @@ import { PublicLayout } from '../layout/PublicLayout'
 import { AdminAuditPage } from '../pages/admin/AdminAuditPage'
 import { AdminClinicPage } from '../pages/admin/AdminClinicPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
+import { AppointmentsPage } from '../pages/common/AppointmentsPage'
 import { ForbiddenPage } from '../pages/common/ForbiddenPage'
 import { HomePage } from '../pages/common/HomePage'
 import { LoginPage } from '../pages/common/LoginPage'
@@ -70,6 +71,14 @@ export function AppRouter() {
           element={
             <RoleRoute roles={[ROLES.MANAGER]}>
               <ManagerCreatePatientPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/manager/appointments"
+          element={
+            <RoleRoute roles={[ROLES.MANAGER]}>
+              <AppointmentsPage />
             </RoleRoute>
           }
         />

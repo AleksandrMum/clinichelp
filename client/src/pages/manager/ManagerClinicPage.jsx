@@ -17,14 +17,13 @@ export function ManagerClinicPage() {
       <div className="doctor-page-head">
         <div>
           <h1>Управление клиникой</h1>
-          <p>Раздел для менеджера: настройка услуг и расписания врачей.</p>
+          <p>Настройка услуг и расписания врачей.</p>
         </div>
 
         <div className="doctor-head-actions">
           <span className="role-pill">Режим менеджера</span>
         </div>
       </div>
-
       <div
         style={{
           display: 'grid',
@@ -55,14 +54,6 @@ export function ManagerClinicPage() {
           }}
         >
           <div style={{ marginBottom: '0.8rem' }}>
-            <div
-              style={{
-                fontSize: '2rem',
-                marginBottom: '0.5rem',
-              }}
-            >
-              📋
-            </div>
             <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.15rem', color: '#1d2433' }}>
               Услуги клиники
             </h3>
@@ -94,14 +85,6 @@ export function ManagerClinicPage() {
           }}
         >
           <div style={{ marginBottom: '0.8rem' }}>
-            <div
-              style={{
-                fontSize: '2rem',
-                marginBottom: '0.5rem',
-              }}
-            >
-              ⏸️
-            </div>
             <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.15rem', color: '#1d2433' }}>
               Исключения расписания
             </h3>

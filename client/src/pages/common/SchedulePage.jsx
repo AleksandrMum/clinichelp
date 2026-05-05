@@ -119,12 +119,25 @@ export function SchedulePage() {
   const [selectedEventId, setSelectedEventId] = useState(WEEK_EVENTS[0].id)
   const [scheduleMessage, setScheduleMessage] = useState('')
   const [showSummary, setShowSummary] = useState(false)
+  const [selectedService, setSelectedService] = useState('all')
 
   const activeDoctor = isDoctor ? 'Смирнов Артем Игоревич' : selectedDoctor
 
-  const visibleEvents = useMemo(
+  const allVisibleEvents = useMemo(
     () => clampEventToDisplayRange(WEEK_EVENTS.filter((event) => event.doctor === activeDoctor)),
     [activeDoctor],
+  )
+
+  const uniqueServices = useMemo(
+    () => ['all', ...new Set(allVisibleEvents.filter(e => e.service).map(e => e.service))],
+    [allVisibleEvents],
+  )
+
+  const visibleEvents = useMemo(
+    () => selectedService === 'all' 
+      ? allVisibleEvents 
+      : allVisibleEvents.filter(e => e.service === selectedService),
+    [allVisibleEvents, selectedService],
   )
 
   const weekRows = useMemo(
@@ -218,15 +231,29 @@ export function SchedulePage() {
 
       {!isDoctor ? (
         <div className="schedule-toolbar admin-panel">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span>Врач:</span>
-            <select value={selectedDoctor} onChange={(event) => setSelectedDoctor(event.target.value)}>
-              {DOCTORS.map((doctor) => (
-                <option key={doctor} value={doctor}>
-                  {doctor}
-                </option>
-              ))}
-            </select>
+          <div className="schedule-toolbar-row">
+            <div className="schedule-filter">
+              <label>Врач:</label>
+              <select value={selectedDoctor} onChange={(event) => setSelectedDoctor(event.target.value)}>
+                {DOCTORS.map((doctor) => (
+                  <option key={doctor} value={doctor}>
+                    {doctor}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="schedule-filter">
+              <label>Услуга:</label>
+              <select value={selectedService} onChange={(event) => setSelectedService(event.target.value)}>
+                <option value="all">Все услуги</option>
+                {uniqueServices.slice(1).map((service) => (
+                  <option key={service} value={service}>
+                    {service}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       ) : null}
@@ -286,8 +313,12 @@ export function SchedulePage() {
               type="button"
               className={focusedDay?.date === day.date ? 'day-header active' : 'day-header'}
               onClick={() => focusDay(day)}
+              title={`Выбрать ${day.day} ${day.label}`}
             >
-              <span className="day-header-title">{day.day} {day.label}</span>
+              <span className="day-header-title">
+                <span style={{ display: 'block', fontWeight: '700', fontSize: '0.95rem' }}>{day.day}</span>
+                <span style={{ display: 'block', fontSize: '0.8rem', color: '#59637a', marginTop: '0.2rem' }}>{day.label}</span>
+              </span>
             </button>
           ))}
         </div>

@@ -4,6 +4,7 @@ export const NAVIGATION_BY_ROLE = {
   [ROLES.MANAGER]: [
     { label: 'Главная', to: '/home' },
     { label: 'Пациенты', to: '/manager/patients' },
+    { label: 'Записи на прием', to: '/manager/appointments' },
     { label: 'Расписание', to: '/manager/schedule' },
     {
       label: 'Клиника',
