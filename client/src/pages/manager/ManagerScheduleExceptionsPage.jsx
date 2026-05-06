@@ -1,0 +1,623 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthProvider'
+import { ROLES } from '../../auth/roles'
+import { PlaceholderPage } from '../common/PlaceholderPage'
+import { BRANCHES, DOCTORS, EXCEPTION_TYPES, SCHEDULE_EXCEPTIONS } from '../TEMP/scheduleExceptionsMocks'
+
+function SearchableAutocompleteField({
+  label,
+  placeholder,
+  emptyText,
+  items,
+  selectedValue,
+  getItemValue,
+  getItemLabel,
+  onSelect,
+}) {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [hoveredIndex, setHoveredIndex] = useState(-1)
+
+  const selectedItem = useMemo(
+    () => items.find((item) => getItemValue(item) === selectedValue) || null,
+    [getItemValue, items, selectedValue],
+  )
+
+  useEffect(() => {
+    setQuery(selectedItem ? getItemLabel(selectedItem) : '')
+  }, [getItemLabel, selectedItem, selectedValue])
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return items
+    }
+
+    const matchedItems = items.filter((item) =>
+      getItemLabel(item).toLowerCase().includes(normalizedQuery),
+    )
+
+    if (
+      selectedItem &&
+      !matchedItems.some((item) => getItemValue(item) === getItemValue(selectedItem))
+    ) {
+      return [selectedItem, ...matchedItems]
+    }
+
+    return matchedItems
+  }, [getItemLabel, getItemValue, items, query, selectedItem])
+
+  function handlePick(item) {
+    onSelect(item)
+    setQuery(getItemLabel(item))
+    setIsOpen(false)
+    setHoveredIndex(-1)
+  }
+
+  return (
+    <label className="autocomplete-field">
+      <span>{label}</span>
+      <div className="autocomplete-root">
+        <input
+          value={query}
+          placeholder={placeholder}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setIsOpen(true)
+            setHoveredIndex(-1)
+          }}
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+        />
+
+        {isOpen ? (
+          <ul className="autocomplete-menu" role="listbox">
+            {filteredItems.length ? (
+              filteredItems.map((item, index) => (
+                <li key={getItemValue(item)}>
+                  <button
+                    type="button"
+                    className={index === hoveredIndex ? 'autocomplete-option active' : 'autocomplete-option'}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(-1)}
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      handlePick(item)
+                    }}
+                  >
+                    {getItemLabel(item)}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="autocomplete-empty">{emptyText}</li>
+            )}
+          </ul>
+        ) : null}
+      </div>
+    </label>
+  )
+}
+
+function getDoctorId(doctor) {
+  return doctor.id
+}
+
+function getDoctorName(doctor) {
+  return doctor.fullName
+}
+
+function getBranchId(branch) {
+  return branch.id
+}
+
+function getBranchName(branch) {
+  return branch.name
+}
+
+const SCOPE = {
+  BRANCH: 'branch',
+  DOCTOR: 'doctor',
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'Не задано'
+  }
+
+  return value.replace('T', ' ')
+}
+
+function validateExceptionPayload(payload) {
+  if (!payload.startAt) {
+    return 'Укажите начало периода'
+  }
+
+  if (!payload.endAt) {
+    return 'Укажите окончание периода'
+  }
+
+  if (new Date(payload.endAt) <= new Date(payload.startAt)) {
+    return 'Окончание должно быть позже начала'
+  }
+
+  if (!payload.reason?.trim()) {
+    return 'Причина не может быть пустой'
+  }
+
+  return null
+}
+
+export function ManagerScheduleExceptionsPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const isManager = user?.role === ROLES.MANAGER
+  const [exceptions, setExceptions] = useState(SCHEDULE_EXCEPTIONS)
+  const [selectedBranchId, setSelectedBranchId] = useState(BRANCHES[0]?.id || '')
+  const [scope, setScope] = useState(SCOPE.BRANCH)
+  const [selectedDoctorId, setSelectedDoctorId] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedExceptionId, setSelectedExceptionId] = useState(null)
+  const [editingExceptionId, setEditingExceptionId] = useState(null)
+  const [detailForm, setDetailForm] = useState({
+    startAt: '',
+    endAt: '',
+    type: 'unavailable',
+    reason: '',
+  })
+  const [feedbackMessage, setFeedbackMessage] = useState('')
+  const [formData, setFormData] = useState({
+    startAt: '',
+    endAt: '',
+    type: 'unavailable',
+    reason: '',
+  })
+
+  const branchDoctors = useMemo(() => {
+    return DOCTORS.filter((doctor) => doctor.branchId === selectedBranchId).sort((left, right) =>
+      left.fullName.localeCompare(right.fullName, 'ru'),
+    )
+  }, [selectedBranchId])
+
+  const sortedBranches = useMemo(
+    () => [...BRANCHES].sort((left, right) => left.name.localeCompare(right.name, 'ru')),
+    [],
+  )
+
+  useEffect(() => {
+    if (!branchDoctors.length) {
+      setSelectedDoctorId('')
+      return
+    }
+
+    const doctorExists = branchDoctors.some((doctor) => doctor.id === selectedDoctorId)
+    if (!doctorExists) {
+      setSelectedDoctorId('')
+    }
+  }, [branchDoctors, selectedDoctorId])
+
+  useEffect(() => {
+    setSelectedExceptionId(null)
+    setEditingExceptionId(null)
+    setFeedbackMessage('')
+  }, [selectedBranchId, scope, selectedDoctorId])
+
+  useEffect(() => {
+    if (!selectedException) {
+      setDetailForm({
+        startAt: '',
+        endAt: '',
+        type: 'unavailable',
+        reason: '',
+      })
+      return
+    }
+
+    setDetailForm({
+      startAt: selectedException.startAt,
+      endAt: selectedException.endAt,
+      type: selectedException.type,
+      reason: selectedException.reason,
+    })
+  }, [selectedExceptionId, selectedBranchId, scope, selectedDoctorId, exceptions])
+
+  const targetLabel = useMemo(() => {
+    const branch = BRANCHES.find((item) => item.id === selectedBranchId)
+    if (!branch) {
+      return 'Не выбран филиал'
+    }
+
+    if (scope === SCOPE.BRANCH) {
+      return `${branch.name} (все врачи)`
+    }
+
+    const doctor = branchDoctors.find((item) => item.id === selectedDoctorId)
+    return doctor ? `${branch.name} / ${doctor.fullName}` : `${branch.name} / врач не выбран`
+  }, [branchDoctors, scope, selectedBranchId, selectedDoctorId])
+
+  const filteredExceptions = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase()
+
+    return exceptions
+      .filter((exception) => exception.branchId === selectedBranchId)
+      .filter((exception) => {
+        if (scope === SCOPE.BRANCH) {
+          return exception.scope === SCOPE.BRANCH
+        }
+
+        return exception.scope === SCOPE.DOCTOR && exception.doctorId === selectedDoctorId
+      })
+      .filter((exception) => {
+        if (!normalized) {
+          return true
+        }
+
+        const typeLabel = EXCEPTION_TYPES[exception.type]?.label?.toLowerCase() || ''
+        return typeLabel.includes(normalized) || exception.reason.toLowerCase().includes(normalized)
+      })
+      .sort((left, right) => new Date(left.startAt) - new Date(right.startAt))
+  }, [exceptions, scope, searchTerm, selectedBranchId, selectedDoctorId])
+
+  const selectedException = filteredExceptions.find((item) => item.id === selectedExceptionId) || null
+  const isEditing = editingExceptionId === selectedExceptionId
+  const isDoctorScopeReady = scope === SCOPE.BRANCH || Boolean(selectedDoctorId)
+  const isSelectedExceptionReady = Boolean(selectedException)
+  const detailInputsReadOnly = isSelectedExceptionReady && !isEditing
+
+  const handleSelectException = (exceptionId) => {
+    setSelectedExceptionId((currentExceptionId) => (currentExceptionId === exceptionId ? null : exceptionId))
+    setEditingExceptionId(null)
+    setFeedbackMessage('')
+  }
+
+  const handleEdit = (exception) => {
+    if (!exception) {
+      return
+    }
+
+    setEditingExceptionId(exception.id)
+    setDetailForm({
+      startAt: exception.startAt,
+      endAt: exception.endAt,
+      type: exception.type,
+      reason: exception.reason,
+    })
+    setFeedbackMessage('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingExceptionId(null)
+    setFeedbackMessage('')
+    if (selectedException) {
+      setDetailForm({
+        startAt: selectedException.startAt,
+        endAt: selectedException.endAt,
+        type: selectedException.type,
+        reason: selectedException.reason,
+      })
+    }
+  }
+
+  const handleChangeField = (field, value) => {
+    setDetailForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleSaveChanges = () => {
+    const errorMessage = validateExceptionPayload(detailForm)
+    if (errorMessage) {
+      setFeedbackMessage(errorMessage)
+      return
+    }
+
+    if (!selectedException) {
+      setFeedbackMessage('Сначала выберите исключение для редактирования')
+      return
+    }
+
+    setExceptions((prev) => prev.map((item) => {
+      if (item.id !== selectedException.id) {
+        return item
+      }
+
+      return {
+        ...item,
+          startAt: detailForm.startAt,
+          endAt: detailForm.endAt,
+          type: detailForm.type,
+          reason: detailForm.reason.trim(),
+      }
+    }))
+
+    setEditingExceptionId(null)
+      setDetailForm((prev) => ({
+        ...prev,
+        reason: detailForm.reason.trim(),
+      }))
+    setFeedbackMessage('Исключение обновлено')
+  }
+
+  const handleDeleteException = () => {
+    if (!selectedException) {
+      setFeedbackMessage('Сначала выберите исключение для удаления')
+      return
+    }
+
+    setExceptions((prev) => prev.filter((item) => item.id !== selectedException.id))
+    setSelectedExceptionId(null)
+    setEditingExceptionId(null)
+    setDetailForm({
+      startAt: '',
+      endAt: '',
+      type: 'unavailable',
+      reason: '',
+    })
+    setFeedbackMessage('Исключение удалено')
+  }
+
+  const handleCreateException = () => {
+    if (!selectedBranchId) {
+      setFeedbackMessage('Выберите филиал')
+      return
+    }
+
+    if (!isDoctorScopeReady) {
+      setFeedbackMessage('Выберите врача для добавления персонального исключения')
+      return
+    }
+
+    const errorMessage = validateExceptionPayload(formData)
+    if (errorMessage) {
+      setFeedbackMessage(errorMessage)
+      return
+    }
+
+    const createdException = {
+      id: `exc-${Date.now()}`,
+      scope,
+      branchId: selectedBranchId,
+      doctorId: scope === SCOPE.DOCTOR ? selectedDoctorId : null,
+      startAt: formData.startAt,
+      endAt: formData.endAt,
+      type: formData.type,
+      reason: formData.reason.trim(),
+    }
+
+    setExceptions((prev) => [createdException, ...prev])
+    setSelectedExceptionId(createdException.id)
+    setFeedbackMessage('Исключение добавлено')
+    setFormData({
+      startAt: '',
+      endAt: '',
+      type: formData.type,
+      reason: '',
+    })
+    setEditingExceptionId(createdException.id)
+  }
+
+  const handleChangeFormField = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  if (!isManager) {
+    return <PlaceholderPage title="Исключения расписания" />
+  }
+
+  return (
+    <section className="content-card doctor-page">
+      <div className="doctor-page-head">
+        <div>
+          <h1>Исключения расписания</h1>
+          <p>Управление временными недоступностями врачей: болезни, отпуска, обучение, командировки.</p>
+        </div>
+
+        <div className="doctor-head-actions">
+          <button type="button" className="button-secondary" onClick={() => navigate('/manager/clinic')}>
+            ← Назад
+          </button>
+        </div>
+      </div>
+
+      <div className="doctor-toolbar exception-scope-grid">
+        <div className="exception-scope-grid-row exception-scope-grid-top">
+          <button
+            type="button"
+            className={scope === SCOPE.BRANCH ? 'filter-chip active' : 'filter-chip'}
+            onClick={() => setScope(SCOPE.BRANCH)}
+          >
+            Исключения филиала
+          </button>
+
+          <button
+            type="button"
+            className={scope === SCOPE.DOCTOR ? 'filter-chip active' : 'filter-chip'}
+            onClick={() => setScope(SCOPE.DOCTOR)}
+          >
+            Исключения врача
+          </button>
+        </div>
+
+        <div className="exception-scope-grid-row exception-scope-grid-bottom">
+            <SearchableAutocompleteField
+              label="Филиал"
+              placeholder="Поиск филиала"
+              emptyText="Филиал не найден"
+              items={sortedBranches}
+              selectedValue={selectedBranchId}
+              getItemValue={getBranchId}
+              getItemLabel={getBranchName}
+              onSelect={(branch) => setSelectedBranchId(branch.id)}
+            />
+          {scope === SCOPE.DOCTOR ? (
+            <SearchableAutocompleteField
+              label="Врач"
+              placeholder="Поиск врача"
+              emptyText="Врач не найден"
+              items={branchDoctors}
+              selectedValue={selectedDoctorId}
+              getItemValue={getDoctorId}
+              getItemLabel={getDoctorName}
+              onSelect={(doctor) => setSelectedDoctorId(doctor.id)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="doctor-patients-layout">
+        <article className="doctor-list-panel" style={{ flex: '0 0 48%' }}>
+          <div className="panel-header-row">
+            <h2>Список исключений</h2>
+            <label className="doctor-search exception-search-inline">
+              <span>Поиск по названию</span>
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Причина исключения"
+              />
+            </label>
+          </div>
+
+          <p className="panel-muted exception-list-target">{targetLabel}</p>
+
+          <div className="patient-list">
+            {filteredExceptions.length === 0 ? (
+              <p className="panel-muted">Для выбранного уровня нет исключений.</p>
+            ) : null}
+
+            {filteredExceptions.slice(0, 20).map((exception) => (
+              <button
+                key={exception.id}
+                type="button"
+                className={exception.id === selectedException?.id ? 'patient-card active' : 'patient-card'}
+                onClick={() => handleSelectException(exception.id)}
+                style={{ padding: '0.5rem 0.6rem' }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.3rem' }}>
+                  <p className="item-title" style={{ margin: 0 }}>
+                    {EXCEPTION_TYPES[exception.type]?.label || exception.type}
+                  </p>
+                  <p className="item-subtitle" style={{ margin: 0, fontSize: '0.85rem' }}>
+                    {formatDateTime(exception.startAt)} → {formatDateTime(exception.endAt)}
+                  </p>
+                  <p className="item-subtitle" style={{ margin: 0, fontSize: '0.8rem', color: '#59637a' }}>
+                    {exception.reason}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <aside className="doctor-detail-panel" style={{ flex: '0 0 48%' }}>
+          <div className="panel-header-row">
+            <div>
+              <h2>{selectedException ? 'Подробности исключения' : 'Добавить исключение'}</h2>
+            </div>
+            {selectedException ? (
+              <span className="status-pill">{EXCEPTION_TYPES[selectedException.type]?.label || selectedException.type}</span>
+            ) : null}
+          </div>
+
+          <div className="exception-form-stack">
+            <div className="detail-block">
+              <p className="item-subtitle">Цель: {targetLabel}</p>
+              <label className="exception-field">
+                <span>Начало периода</span>
+                <input
+                  type="datetime-local"
+                  value={selectedException ? detailForm.startAt : formData.startAt}
+                  readOnly={detailInputsReadOnly}
+                  onChange={(event) => (selectedException ? handleChangeField('startAt', event.target.value) : handleChangeFormField('startAt', event.target.value))}
+                />
+              </label>
+
+              <label className="exception-field">
+                <span>Окончание периода</span>
+                <input
+                  type="datetime-local"
+                  value={selectedException ? detailForm.endAt : formData.endAt}
+                  readOnly={detailInputsReadOnly}
+                  onChange={(event) => (selectedException ? handleChangeField('endAt', event.target.value) : handleChangeFormField('endAt', event.target.value))}
+                />
+              </label>
+
+              <label className="exception-field">
+                <span>Тип исключения</span>
+                <select
+                  value={selectedException ? detailForm.type : formData.type}
+                  disabled={detailInputsReadOnly}
+                  onChange={(event) => (selectedException ? handleChangeField('type', event.target.value) : handleChangeFormField('type', event.target.value))}
+                >
+                  {Object.entries(EXCEPTION_TYPES)
+                    .sort((left, right) => left[1].label.localeCompare(right[1].label, 'ru'))
+                    .map(([key, { label, description }]) => (
+                      <option key={key} value={key}>
+                        {label} - {description}
+                      </option>
+                    ))}
+                </select>
+              </label>
+
+              <label className="exception-field">
+                <span>Причина</span>
+                <textarea
+                  value={selectedException ? detailForm.reason : formData.reason}
+                  readOnly={detailInputsReadOnly}
+                  onChange={(event) => (selectedException ? handleChangeField('reason', event.target.value) : handleChangeFormField('reason', event.target.value))}
+                  placeholder="Причина исключения"
+                />
+              </label>
+            </div>
+
+            {selectedException ? (
+              <div className="detail-actions">
+                {!isEditing ? (
+                  <>
+                    <button type="button" className="button-secondary" onClick={() => handleEdit(selectedException)}>
+                      Редактировать
+                    </button>
+                    <button type="button" className="text-button" onClick={handleDeleteException}>
+                      Удалить
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="button-secondary" onClick={handleSaveChanges}>
+                      Сохранить изменения
+                    </button>
+                    <button type="button" className="text-button" onClick={handleCancelEdit}>
+                      Отмена
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="detail-actions">
+                <button
+                  type="button"
+                  className="button-secondary"
+                  onClick={handleCreateException}
+                  disabled={!isDoctorScopeReady}
+                >
+                  Добавить исключение
+                </button>
+              </div>
+            )}
+          </div>
+
+          {feedbackMessage ? <p className="panel-feedback">{feedbackMessage}</p> : null}
+        </aside>
+      </div>
+    </section>
+  )
+}

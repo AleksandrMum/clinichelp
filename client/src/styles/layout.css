@@ -1,0 +1,439 @@
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+/* Общие layout-стили: оболочка приложения, header, sidebar, main */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid #dce2ec;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.shell-body {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 0;
+}
+
+.sidebar {
+  background: #f6f8fc;
+  border-right: 1px solid #dce2ec;
+  padding: 1rem 0.75rem;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nav-link {
+  display: block;
+  text-decoration: none;
+  color: #2e374a;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.45rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.nav-link:hover {
+  background: #edf2fb;
+}
+
+.nav-link.active {
+  background: #dbe8ff;
+  color: #0f4ca4;
+}
+
+.main-content {
+  padding: 1.25rem;
+}
+
+.public-shell .header {
+  border-bottom: none;
+}
+
+.public-content {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.footer {
+  padding: 0.65rem 1.25rem;
+  background: #ffffff;
+  border-top: 1px solid #dce2ec;
+}
+
+.footer p {
+  margin: 0;
+  color: #59637a;
+  font-size: 0.88rem;
+}
+
+.admin-page,
+.doctor-page,
+.admin-home {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Структуры страниц: админ/врач/домашняя */
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-grid-top-margin {
+  margin-top: 0.2rem;
+}
+
+.admin-panel-spaced {
+  margin-top: 0.15rem;
+}
+
+.admin-panel-full {
+  width: 100%;
+}
+
+.doctor-page-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+/* Заголовок страницы врача и панели инструментов */
+
+.doctor-page-head h1 {
+  margin-bottom: 0.35rem;
+}
+
+.doctor-head-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: flex-end;
+}
+
+.doctor-toolbar,
+.schedule-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.doctor-patients-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.9fr);
+  gap: 1rem;
+}
+
+.users-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+}
+
+.users-column {
+  min-height: 100%;
+}
+
+.blocked-column {
+  background: #f9fbff;
+}
+
+.manager-clinic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Сетка раздела клиники (менеджер) */
+
+.schedule-week-shell {
+  display: grid;
+  gap: 0;
+  border: 1px solid #dce2ec;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #ffffff;
+  max-width: 100%;
+}
+
+/* Стили расписания: неделя, заголовки дней и телo сетки */
+
+.schedule-week-header {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(130px, 1fr));
+  background: #f6f8fc;
+  border-bottom: 1px solid #dce2ec;
+  min-width: 0;
+}
+
+.schedule-week-body {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(130px, 1fr));
+  min-width: 0;
+}
+
+.schedule-time-header,
+.day-header {
+  padding: 0.55rem 0.6rem;
+}
+
+.schedule-time-header {
+  border-right: 1px solid #dce2ec;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  color: #59637a;
+  font-size: 0.88rem;
+}
+
+.day-header {
+  text-align: left;
+  border: none;
+  border-left: 1px solid #dce2ec;
+  background: transparent;
+  color: inherit;
+  display: grid;
+  gap: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  padding: 0.7rem 0.6rem;
+}
+
+.day-header:hover:not(.active) {
+  background: #f0f5ff;
+}
+
+.day-header.active {
+  background: #dbe8ff;
+  border-top: 3px solid #1f5fb8;
+}
+
+.day-header-title {
+  font-weight: 700;
+  color: #14305f;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  letter-spacing: 0.3px;
+}
+
+.time-rail {
+  display: grid;
+  grid-template-rows: repeat(10, var(--hour-height));
+  border-right: 1px solid #dce2ec;
+  background: #fbfcff;
+}
+
+.time-rail-label {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.35rem;
+  color: #3d4a60;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.day-column {
+  position: relative;
+  min-height: calc(var(--hour-height) * 10);
+  border-left: 1px solid #dce2ec;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #ffffff 0,
+      #ffffff calc(var(--hour-height) - 1px),
+      #edf2fb calc(var(--hour-height) - 1px),
+      #edf2fb var(--hour-height)
+    );
+}
+
+.day-column.off {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #f6f8fc 0,
+      #f6f8fc calc(var(--hour-height) - 1px),
+      #e9eef6 calc(var(--hour-height) - 1px),
+      #e9eef6 var(--hour-height)
+    );
+}
+
+.day-hour-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.availability-window {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  border-radius: 0.45rem;
+  background: rgba(223, 244, 231, 0.5);
+  border: 1px solid rgba(161, 214, 181, 0.9);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Окна доступности в дне расписания */
+
+.schedule-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: flex-end;
+}
+
+.exception-scope-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+/* Сетка для управления исключениями расписания */
+
+.exception-scope-grid-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.exception-scope-grid-top,
+.exception-scope-grid-bottom {
+  min-width: 0;
+}
+
+.exception-scope-grid-top {
+  align-items: end;
+}
+
+.exception-scope-grid-bottom {
+  align-items: start;
+  padding-left: 0.05rem;
+}
+
+.doctor-list-panel h2,
+.doctor-detail-panel h2 {
+  margin: 0;
+}
+
+.schedule-week-shell {
+  max-width: 100%;
+}
+
+/* Адаптивные правила для мобильных и узких экранов */
+@media (max-width: 900px) {
+  .shell-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid #dce2ec;
+  }
+
+  .sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-grid-two-col,
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-span-2 {
+    grid-column: auto;
+  }
+
+  .panel-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schedule-toolbar-row {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .schedule-filter,
+  .schedule-filter select {
+    width: 100%;
+  }
+
+  .users-board {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-list-item {
+    flex-direction: column;
+  }
+
+  .item-actions {
+    align-items: stretch;
+  }
+
+  .doctor-patients-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-head-actions,
+  .schedule-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doctor-page-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doctor-head-actions {
+    align-items: flex-start;
+  }
+
+  .schedule-week-header,
+  .schedule-week-body {
+    grid-template-columns: 44px repeat(7, minmax(108px, 1fr));
+  }
+
+  .schedule-week-shell {
+    overflow-x: auto;
+  }
+}
