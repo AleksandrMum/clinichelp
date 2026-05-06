@@ -59,7 +59,7 @@ export function LoginPage() {
       </button>
 
       <p className="hint-text">
-        Тестовые пользователи: admin/admin, doctor/doctor, manager/manager.
+        Доступные учетные записи: admin/admin, doctor/doctor, manager/manager.
       </p>
     </section>
   )

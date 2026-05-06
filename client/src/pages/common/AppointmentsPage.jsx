@@ -124,7 +124,6 @@ export function AppointmentsPage() {
               Создать запись
             </button>
           ) : null}
-          <span className="role-pill">{isDoctor ? 'Режим врача' : 'Режим менеджера'}</span>
         </div>
       </div>
 
@@ -134,7 +133,7 @@ export function AppointmentsPage() {
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Например, Ковалева или 05.05.2026"
+            placeholder="ФИО пациента или дата"
           />
         </label>
       </div>

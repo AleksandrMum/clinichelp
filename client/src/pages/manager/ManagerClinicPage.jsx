@@ -19,77 +19,35 @@ export function ManagerClinicPage() {
           <h1>Управление клиникой</h1>
           <p>Настройка услуг и расписания врачей.</p>
         </div>
-
-        <div className="doctor-head-actions">
-          <span className="role-pill">Режим менеджера</span>
-        </div>
       </div>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1rem',
-          marginTop: '1rem',
-        }}
-      >
+
+      <div className="manager-clinic-grid">
         <button
           type="button"
+          className="manager-clinic-card"
           onClick={() => navigate('/manager/clinic/services')}
-          style={{
-            border: '1px solid #dce2ec',
-            borderRadius: '0.75rem',
-            padding: '1.5rem',
-            background: '#ffffff',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#1f5fb8'
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(31, 95, 184, 0.12)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#dce2ec'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
         >
-          <div style={{ marginBottom: '0.8rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.15rem', color: '#1d2433' }}>
+          <div className="manager-clinic-card-header">
+            <h3 className="manager-clinic-card-title">
               Услуги клиники
             </h3>
           </div>
-          <p style={{ margin: 0, color: '#59637a', fontSize: '0.95rem' }}>
+          <p className="manager-clinic-card-text">
             Управление справочником услуг: название, длительность и стоимость приема.
           </p>
         </button>
 
         <button
           type="button"
+          className="manager-clinic-card"
           onClick={() => navigate('/manager/clinic/schedule-exceptions')}
-          style={{
-            border: '1px solid #dce2ec',
-            borderRadius: '0.75rem',
-            padding: '1.5rem',
-            background: '#ffffff',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#1f5fb8'
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(31, 95, 184, 0.12)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#dce2ec'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
         >
-          <div style={{ marginBottom: '0.8rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.15rem', color: '#1d2433' }}>
+          <div className="manager-clinic-card-header">
+            <h3 className="manager-clinic-card-title">
               Исключения расписания
             </h3>
           </div>
-          <p style={{ margin: 0, color: '#59637a', fontSize: '0.95rem' }}>
+          <p className="manager-clinic-card-text">
             Управление временными недоступностями врачей: болезни, отпуска, обучение.
           </p>
         </button>

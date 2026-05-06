@@ -1,0 +1,21 @@
+/* Сброс и глобальные переменные */
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.4;
+  color: #1d2433;
+  background: #eef2f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #eef2f7;
+}
+
+button,
+input {
+  font: inherit;
+}

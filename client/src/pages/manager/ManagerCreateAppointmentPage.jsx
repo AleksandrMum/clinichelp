@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
 import { ROLES } from '../../auth/roles'
 import { PlaceholderPage } from '../common/PlaceholderPage'
 
-// TEMP: временные заглушки данных для интерфейса — удалить при подключении реального бэкенда
 import { PATIENTS } from '../TEMP/patientsMocks'
 import { SERVICES } from '../TEMP/servicesMocks'
 import { DOCTORS, SERVICES_BY_ID } from '../TEMP/appointmentsMocks'
@@ -61,6 +60,122 @@ function calculateEndTime(startTime, serviceId) {
   return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
 }
 
+function SearchableAutocompleteField({
+  label,
+  placeholder,
+  emptyText,
+  items,
+  selectedId,
+  getItemId,
+  getItemLabel,
+  onSelect,
+}) {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [hoveredIndex, setHoveredIndex] = useState(-1)
+
+  const selectedItem = useMemo(
+    () => items.find((item) => getItemId(item) === selectedId) || null,
+    [getItemId, items, selectedId],
+  )
+
+  useEffect(() => {
+    setQuery(selectedItem ? getItemLabel(selectedItem) : '')
+  }, [getItemLabel, selectedItem, selectedId])
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return items
+    }
+
+    const matchedItems = items.filter((item) =>
+      getItemLabel(item).toLowerCase().includes(normalizedQuery),
+    )
+
+    if (
+      selectedItem &&
+      !matchedItems.some((item) => getItemId(item) === getItemId(selectedItem))
+    ) {
+      return [selectedItem, ...matchedItems]
+    }
+
+    return matchedItems
+  }, [getItemId, getItemLabel, items, query, selectedItem])
+
+  function handlePick(item) {
+    onSelect(item)
+    setQuery(getItemLabel(item))
+    setIsOpen(false)
+    setHoveredIndex(-1)
+  }
+
+  return (
+    <label className="autocomplete-field">
+      <span>{label}</span>
+      <div className="autocomplete-root">
+        <input
+          className="autocomplete-input"
+          placeholder={placeholder}
+          value={query}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setIsOpen(true)
+            setHoveredIndex(-1)
+          }}
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+        />
+
+        {isOpen ? (
+          <ul className="autocomplete-menu" role="listbox">
+            {filteredItems.length ? (
+              filteredItems.map((item, index) => (
+                <li key={getItemId(item)}>
+                  <button
+                    type="button"
+                    className={index === hoveredIndex ? 'autocomplete-option active' : 'autocomplete-option'}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(-1)}
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      handlePick(item)
+                    }}
+                  >
+                    {getItemLabel(item)}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="autocomplete-empty">{emptyText}</li>
+            )}
+          </ul>
+        ) : null}
+      </div>
+    </label>
+  )
+}
+
+function getPatientLabel(patient) {
+  return patient.fullName
+}
+
+function getItemId(item) {
+  return item.id
+}
+
+function getDoctorLabel(doctor) {
+  return doctor.name
+}
+
+function getServiceLabel(service) {
+  return `${service.name} (${service.duration} мин) - ${service.price} ₽`
+}
+
 export function ManagerCreateAppointmentPage() {
   const { user } = useAuth()
   const location = useLocation()
@@ -69,11 +184,25 @@ export function ManagerCreateAppointmentPage() {
   const editingAppointment = location.state?.appointment || null
   const isEditing = Boolean(editingAppointment)
 
-  // Состояние формы
   const [formData, setFormData] = useState(() => buildInitialFormData(editingAppointment))
 
   const [validationMessage, setValidationMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  const sortedPatients = useMemo(
+    () => [...PATIENTS].sort((left, right) => left.fullName.localeCompare(right.fullName, 'ru')),
+    [],
+  )
+
+  const sortedDoctors = useMemo(
+    () => [...DOCTORS].sort((left, right) => left.name.localeCompare(right.name, 'ru')),
+    [],
+  )
+
+  const sortedServices = useMemo(
+    () => [...SERVICES].sort((left, right) => left.name.localeCompare(right.name, 'ru')),
+    [],
+  )
 
   useEffect(() => {
     setFormData(buildInitialFormData(editingAppointment))
@@ -81,7 +210,6 @@ export function ManagerCreateAppointmentPage() {
     setSuccessMessage('')
   }, [editingAppointment])
 
-  // Автоматический расчет времени окончания при выборе услуги или изменении времени начала
   useEffect(() => {
     const nextEndTime = calculateEndTime(formData.startTime, formData.serviceId)
 
@@ -93,9 +221,8 @@ export function ManagerCreateAppointmentPage() {
     }
   }, [formData.serviceId, formData.startTime])
 
-  // Обработчик выбора пациента
-  function handlePatientSelect(e) {
-    const patientId = e.target.value
+  function handlePatientSelect(input) {
+    const patientId = typeof input === 'string' ? input : input.target.value
     const patient = PATIENTS.find((p) => p.id === patientId)
     setFormData((prev) => ({
       ...prev,
@@ -105,25 +232,24 @@ export function ManagerCreateAppointmentPage() {
     setValidationMessage('')
   }
 
-  // Обработчик выбора врача
-  function handleDoctorSelect(e) {
+  function handleDoctorSelect(input) {
+    const doctorId = typeof input === 'string' ? input : input.target.value
     setFormData((prev) => ({
       ...prev,
-      doctorId: e.target.value,
+      doctorId,
     }))
     setValidationMessage('')
   }
 
-  // Обработчик выбора услуги
-  function handleServiceSelect(e) {
+  function handleServiceSelect(input) {
+    const serviceId = typeof input === 'string' ? input : input.target.value
     setFormData((prev) => ({
       ...prev,
-      serviceId: e.target.value,
+      serviceId,
     }))
     setValidationMessage('')
   }
 
-  // Обработчик изменения времени начала
   function handleStartTimeChange(e) {
     setFormData((prev) => ({
       ...prev,
@@ -131,7 +257,6 @@ export function ManagerCreateAppointmentPage() {
     }))
   }
 
-  // Обработчик изменения даты начала (ISO format)
   function handleStartDateChange(e) {
     setFormData((prev) => ({
       ...prev,
@@ -139,11 +264,9 @@ export function ManagerCreateAppointmentPage() {
     }))
   }
 
-  // Валидация и создание записи
   function handleCreateAppointment(e) {
     e.preventDefault()
 
-    // Базовая валидация
     if (!formData.patientId) {
       setValidationMessage('Пожалуйста, выберите пациента')
       return
@@ -165,7 +288,6 @@ export function ManagerCreateAppointmentPage() {
       return
     }
 
-    // Проверка что время окончания позже времени начала
     const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00`)
     const endDateTime = new Date(`${formData.startDate}T${formData.endTime}:00`)
 
@@ -174,7 +296,6 @@ export function ManagerCreateAppointmentPage() {
       return
     }
 
-    // Если все хорошо, показываем сообщение об успехе
     setValidationMessage('')
     setSuccessMessage(
       isEditing
@@ -182,7 +303,6 @@ export function ManagerCreateAppointmentPage() {
         : 'Запись успешно создана! Сейчас вы вернетесь к списку.'
     )
 
-    // Симуляция сохранения (в реальном приложении здесь был бы API запрос)
     setTimeout(() => {
       navigate('/manager/appointments')
     }, 1500)
@@ -216,41 +336,40 @@ export function ManagerCreateAppointmentPage() {
 
       <form onSubmit={handleCreateAppointment}>
         <div className="form-grid form-grid-two-col" style={{ marginBottom: '1rem' }}>
-          <label>
-            <span>Пациент *</span>
-            <select value={formData.patientId} onChange={handlePatientSelect}>
-              <option value="">Выберите пациента</option>
-              {PATIENTS.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.fullName}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableAutocompleteField
+            label="Пациент *"
+            placeholder="ФИО пациента"
+            emptyText="Пациент не найден"
+            items={sortedPatients}
+            selectedId={formData.patientId}
+            getItemId={getItemId}
+            getItemLabel={getPatientLabel}
+            onSelect={(patient) => handlePatientSelect(patient.id)}
+          />
 
-          <label>
-            <span>Врач *</span>
-            <select value={formData.doctorId} onChange={handleDoctorSelect}>
-              <option value="">Выберите врача</option>
-              {DOCTORS.map((doctor) => (
-                <option key={doctor.id} value={doctor.id}>
-                  {doctor.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableAutocompleteField
+            label="Врач *"
+            placeholder="ФИО врача"
+            emptyText="Врач не найден"
+            items={sortedDoctors}
+            selectedId={formData.doctorId}
+            getItemId={getItemId}
+            getItemLabel={getDoctorLabel}
+            onSelect={(doctor) => handleDoctorSelect(doctor.id)}
+          />
 
-          <label className="form-span-2">
-            <span>Услуга *</span>
-            <select value={formData.serviceId} onChange={handleServiceSelect}>
-              <option value="">Выберите услугу</option>
-              {SERVICES.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name} ({service.duration} мин) - {service.price} ₽
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="form-span-2">
+            <SearchableAutocompleteField
+              label="Услуга *"
+              placeholder="Название услуги"
+              emptyText="Услуга не найдена"
+              items={sortedServices}
+              selectedId={formData.serviceId}
+              getItemId={getItemId}
+              getItemLabel={getServiceLabel}
+              onSelect={(service) => handleServiceSelect(service.id)}
+            />
+          </div>
 
           <div className="form-span-2 appointment-schedule-grid">
             <label>

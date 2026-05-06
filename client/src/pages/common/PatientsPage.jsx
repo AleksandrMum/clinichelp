@@ -54,7 +54,6 @@ export function PatientsPage() {
               Создать пациента
             </button>
           ) : null}
-          <span className="role-pill">{isDoctor ? 'Режим врача' : 'Режим менеджера'}</span>
         </div>
       </div>
 
@@ -64,7 +63,7 @@ export function PatientsPage() {
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Например, Ковалева"
+            placeholder="ФИО или телефон"
           />
         </label>
       </div>

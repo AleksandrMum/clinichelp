@@ -149,7 +149,6 @@ export function ManagerCreatePatientPage() {
           <button type="button" className="button-secondary" onClick={() => navigate('/manager/patients')}>
             К списку пациентов
           </button>
-          <span className="role-pill">Режим менеджера</span>
         </div>
       </div>
 
@@ -165,7 +164,7 @@ export function ManagerCreatePatientPage() {
               name="full_name"
               value={form.full_name}
               onChange={handleChange}
-              placeholder="Например, Иванов Иван Иванович"
+              placeholder="ФИО пациента"
               maxLength={150}
               aria-invalid={Boolean(errors.full_name)}
             />

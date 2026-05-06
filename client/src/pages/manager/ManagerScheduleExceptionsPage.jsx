@@ -5,6 +5,121 @@ import { ROLES } from '../../auth/roles'
 import { PlaceholderPage } from '../common/PlaceholderPage'
 import { BRANCHES, DOCTORS, EXCEPTION_TYPES, SCHEDULE_EXCEPTIONS } from '../TEMP/scheduleExceptionsMocks'
 
+function SearchableAutocompleteField({
+  label,
+  placeholder,
+  emptyText,
+  items,
+  selectedValue,
+  getItemValue,
+  getItemLabel,
+  onSelect,
+}) {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [hoveredIndex, setHoveredIndex] = useState(-1)
+
+  const selectedItem = useMemo(
+    () => items.find((item) => getItemValue(item) === selectedValue) || null,
+    [getItemValue, items, selectedValue],
+  )
+
+  useEffect(() => {
+    setQuery(selectedItem ? getItemLabel(selectedItem) : '')
+  }, [getItemLabel, selectedItem, selectedValue])
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return items
+    }
+
+    const matchedItems = items.filter((item) =>
+      getItemLabel(item).toLowerCase().includes(normalizedQuery),
+    )
+
+    if (
+      selectedItem &&
+      !matchedItems.some((item) => getItemValue(item) === getItemValue(selectedItem))
+    ) {
+      return [selectedItem, ...matchedItems]
+    }
+
+    return matchedItems
+  }, [getItemLabel, getItemValue, items, query, selectedItem])
+
+  function handlePick(item) {
+    onSelect(item)
+    setQuery(getItemLabel(item))
+    setIsOpen(false)
+    setHoveredIndex(-1)
+  }
+
+  return (
+    <label className="autocomplete-field">
+      <span>{label}</span>
+      <div className="autocomplete-root">
+        <input
+          value={query}
+          placeholder={placeholder}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setIsOpen(true)
+            setHoveredIndex(-1)
+          }}
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+        />
+
+        {isOpen ? (
+          <ul className="autocomplete-menu" role="listbox">
+            {filteredItems.length ? (
+              filteredItems.map((item, index) => (
+                <li key={getItemValue(item)}>
+                  <button
+                    type="button"
+                    className={index === hoveredIndex ? 'autocomplete-option active' : 'autocomplete-option'}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(-1)}
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      handlePick(item)
+                    }}
+                  >
+                    {getItemLabel(item)}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="autocomplete-empty">{emptyText}</li>
+            )}
+          </ul>
+        ) : null}
+      </div>
+    </label>
+  )
+}
+
+function getDoctorId(doctor) {
+  return doctor.id
+}
+
+function getDoctorName(doctor) {
+  return doctor.fullName
+}
+
+function getBranchId(branch) {
+  return branch.id
+}
+
+function getBranchName(branch) {
+  return branch.name
+}
+
 const SCOPE = {
   BRANCH: 'branch',
   DOCTOR: 'doctor',
@@ -64,8 +179,15 @@ export function ManagerScheduleExceptionsPage() {
   })
 
   const branchDoctors = useMemo(() => {
-    return DOCTORS.filter((doctor) => doctor.branchId === selectedBranchId)
+    return DOCTORS.filter((doctor) => doctor.branchId === selectedBranchId).sort((left, right) =>
+      left.fullName.localeCompare(right.fullName, 'ru'),
+    )
   }, [selectedBranchId])
+
+  const sortedBranches = useMemo(
+    () => [...BRANCHES].sort((left, right) => left.name.localeCompare(right.name, 'ru')),
+    [],
+  )
 
   useEffect(() => {
     if (!branchDoctors.length) {
@@ -75,7 +197,7 @@ export function ManagerScheduleExceptionsPage() {
 
     const doctorExists = branchDoctors.some((doctor) => doctor.id === selectedDoctorId)
     if (!doctorExists) {
-      setSelectedDoctorId(branchDoctors[0].id)
+      setSelectedDoctorId('')
     }
   }, [branchDoctors, selectedDoctorId])
 
@@ -303,7 +425,6 @@ export function ManagerScheduleExceptionsPage() {
           <button type="button" className="button-secondary" onClick={() => navigate('/manager/clinic')}>
             ← Назад
           </button>
-          <span className="role-pill">Режим менеджера</span>
         </div>
       </div>
 
@@ -327,27 +448,27 @@ export function ManagerScheduleExceptionsPage() {
         </div>
 
         <div className="exception-scope-grid-row exception-scope-grid-bottom">
-          <label className="schedule-filter exception-scope-select">
-            <span>Филиал</span>
-            <select value={selectedBranchId} onChange={(event) => setSelectedBranchId(event.target.value)}>
-              {BRANCHES.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-          </label>
+            <SearchableAutocompleteField
+              label="Филиал"
+              placeholder="Поиск филиала"
+              emptyText="Филиал не найден"
+              items={sortedBranches}
+              selectedValue={selectedBranchId}
+              getItemValue={getBranchId}
+              getItemLabel={getBranchName}
+              onSelect={(branch) => setSelectedBranchId(branch.id)}
+            />
           {scope === SCOPE.DOCTOR ? (
-            <label className="schedule-filter exception-scope-select">
-              <span>Врач</span>
-              <select value={selectedDoctorId} onChange={(event) => setSelectedDoctorId(event.target.value)}>
-                {branchDoctors.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    {doctor.fullName}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SearchableAutocompleteField
+              label="Врач"
+              placeholder="Поиск врача"
+              emptyText="Врач не найден"
+              items={branchDoctors}
+              selectedValue={selectedDoctorId}
+              getItemValue={getDoctorId}
+              getItemLabel={getDoctorName}
+              onSelect={(doctor) => setSelectedDoctorId(doctor.id)}
+            />
           ) : null}
         </div>
       </div>
@@ -361,7 +482,7 @@ export function ManagerScheduleExceptionsPage() {
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Например, обед или доп. смена"
+                placeholder="Причина исключения"
               />
             </label>
           </div>
@@ -437,11 +558,13 @@ export function ManagerScheduleExceptionsPage() {
                   disabled={detailInputsReadOnly}
                   onChange={(event) => (selectedException ? handleChangeField('type', event.target.value) : handleChangeFormField('type', event.target.value))}
                 >
-                  {Object.entries(EXCEPTION_TYPES).map(([key, { label, description }]) => (
-                    <option key={key} value={key}>
-                      {label} - {description}
-                    </option>
-                  ))}
+                  {Object.entries(EXCEPTION_TYPES)
+                    .sort((left, right) => left[1].label.localeCompare(right[1].label, 'ru'))
+                    .map(([key, { label, description }]) => (
+                      <option key={key} value={key}>
+                        {label} - {description}
+                      </option>
+                    ))}
                 </select>
               </label>
 
@@ -451,7 +574,7 @@ export function ManagerScheduleExceptionsPage() {
                   value={selectedException ? detailForm.reason : formData.reason}
                   readOnly={detailInputsReadOnly}
                   onChange={(event) => (selectedException ? handleChangeField('reason', event.target.value) : handleChangeFormField('reason', event.target.value))}
-                  placeholder="Например, обеденный перерыв или дополнительная вечерняя смена"
+                  placeholder="Причина исключения"
                 />
               </label>
             </div>

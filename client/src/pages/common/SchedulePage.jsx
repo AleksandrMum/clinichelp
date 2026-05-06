@@ -15,6 +15,117 @@ const GAP_PX = 8
 // TEMP: временные заглушки данных для интерфейса — удалить при подключении реального бэкенда
 import { DOCTORS, WEEK_DAYS, WEEK_EVENTS, EVENT_STATUS_LABELS } from '../TEMP/scheduleMocks'
 
+function SearchableAutocompleteField({
+  label,
+  placeholder,
+  emptyText,
+  items,
+  selectedValue,
+  getItemValue,
+  getItemLabel,
+  onSelect,
+}) {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [hoveredIndex, setHoveredIndex] = useState(-1)
+
+  const selectedItem = useMemo(
+    () => items.find((item) => getItemValue(item) === selectedValue) || null,
+    [getItemValue, items, selectedValue],
+  )
+
+  useEffect(() => {
+    setQuery(selectedItem ? getItemLabel(selectedItem) : '')
+  }, [getItemLabel, selectedItem, selectedValue])
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return items
+    }
+
+    const matchedItems = items.filter((item) =>
+      getItemLabel(item).toLowerCase().includes(normalizedQuery),
+    )
+
+    if (
+      selectedItem &&
+      !matchedItems.some((item) => getItemValue(item) === getItemValue(selectedItem))
+    ) {
+      return [selectedItem, ...matchedItems]
+    }
+
+    return matchedItems
+  }, [getItemLabel, getItemValue, items, query, selectedItem])
+
+  function handlePick(item) {
+    onSelect(item)
+    setQuery(getItemLabel(item))
+    setIsOpen(false)
+    setHoveredIndex(-1)
+  }
+
+  return (
+    <label className="autocomplete-field">
+      <span>{label}</span>
+      <div className="autocomplete-root">
+        <input
+          value={query}
+          placeholder={placeholder}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setIsOpen(true)
+            setHoveredIndex(-1)
+          }}
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+        />
+
+        {isOpen ? (
+          <ul className="autocomplete-menu" role="listbox">
+            {filteredItems.length ? (
+              filteredItems.map((item, index) => (
+                <li key={getItemValue(item)}>
+                  <button
+                    type="button"
+                    className={index === hoveredIndex ? 'autocomplete-option active' : 'autocomplete-option'}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(-1)}
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      handlePick(item)
+                    }}
+                  >
+                    {getItemLabel(item)}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="autocomplete-empty">{emptyText}</li>
+            )}
+          </ul>
+        ) : null}
+      </div>
+    </label>
+  )
+}
+
+function getItemValue(item) {
+  return item
+}
+
+function getItemLabel(item) {
+  return item
+}
+
+function getServiceLabel(item) {
+  return item === 'all' ? 'Все услуги' : item
+}
+
 function timeToMinutes(time) {
   const [hours, minutes] = time.split(':').map(Number)
   return hours * 60 + minutes
@@ -114,7 +225,7 @@ export function SchedulePage() {
   const { user } = useAuth()
   const isDoctor = user?.role === ROLES.DOCTOR
   const isManager = user?.role === ROLES.MANAGER
-  const [selectedDoctor, setSelectedDoctor] = useState(DOCTORS[0])
+  const [selectedDoctor, setSelectedDoctor] = useState(null)
   const [focusedDayKey, setFocusedDayKey] = useState(WEEK_DAYS[0].date)
   const [selectedEventId, setSelectedEventId] = useState(WEEK_EVENTS[0].id)
   const [scheduleMessage, setScheduleMessage] = useState('')
@@ -123,14 +234,24 @@ export function SchedulePage() {
 
   const activeDoctor = isDoctor ? 'Смирнов Артем Игоревич' : selectedDoctor
 
+  const sortedDoctors = useMemo(
+    () => [...DOCTORS].sort((left, right) => left.localeCompare(right, 'ru')),
+    [],
+  )
+
   const allVisibleEvents = useMemo(
     () => clampEventToDisplayRange(WEEK_EVENTS.filter((event) => event.doctor === activeDoctor)),
     [activeDoctor],
   )
 
   const uniqueServices = useMemo(
-    () => ['all', ...new Set(allVisibleEvents.filter(e => e.service).map(e => e.service))],
+    () => ['all', ...new Set(allVisibleEvents.filter((event) => event.service).map((event) => event.service))],
     [allVisibleEvents],
+  )
+
+  const sortedServices = useMemo(
+    () => ['all', ...uniqueServices.slice(1).sort((left, right) => left.localeCompare(right, 'ru'))],
+    [uniqueServices],
   )
 
   const visibleEvents = useMemo(
@@ -224,7 +345,6 @@ export function SchedulePage() {
         </div>
 
         <div className="doctor-head-actions">
-          <span className="role-pill">{isDoctor ? 'Режим врача' : 'Режим менеджера'}</span>
           <span className="panel-muted">Неделя: 04.05.2026 - 10.05.2026</span>
         </div>
       </div>
@@ -232,60 +352,28 @@ export function SchedulePage() {
       {!isDoctor ? (
         <div className="schedule-toolbar admin-panel">
           <div className="schedule-toolbar-row">
-            <div className="schedule-filter">
-              <label>Врач:</label>
-              <select value={selectedDoctor} onChange={(event) => setSelectedDoctor(event.target.value)}>
-                {DOCTORS.map((doctor) => (
-                  <option key={doctor} value={doctor}>
-                    {doctor}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="schedule-filter">
-              <label>Услуга:</label>
-              <select value={selectedService} onChange={(event) => setSelectedService(event.target.value)}>
-                <option value="all">Все услуги</option>
-                {uniqueServices.slice(1).map((service) => (
-                  <option key={service} value={service}>
-                    {service}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SearchableAutocompleteField
+              label="Врач:"
+              placeholder="Поиск врача"
+              emptyText="Врач не найден"
+              items={sortedDoctors}
+              selectedValue={selectedDoctor}
+              getItemValue={getItemValue}
+              getItemLabel={getItemLabel}
+              onSelect={setSelectedDoctor}
+            />
+
+            <SearchableAutocompleteField
+              label="Услуга:"
+              placeholder="Поиск услуги"
+              emptyText="Услуга не найдена"
+              items={sortedServices}
+              selectedValue={selectedService}
+              getItemValue={getItemValue}
+              getItemLabel={getServiceLabel}
+              onSelect={setSelectedService}
+            />
           </div>
-        </div>
-      ) : null}
-
-      <div style={{ marginTop: '0.6rem' }}>
-        <button type="button" className="text-button" onClick={() => setShowSummary((s) => !s)}>
-          {showSummary ? 'Скрыть краткую статистику' : 'Открыть краткую статистику'}
-        </button>
-      </div>
-
-      {showSummary ? (
-        <div className="schedule-summary">
-        <article className="stat-card">
-          <p className="stat-label">Свободные часы</p>
-          <p className="stat-value">{Math.round(totalFreeMinutes / 60)}</p>
-          <p className="stat-hint">в рабочих окнах</p>
-        </article>
-        <article className="stat-card">
-          <p className="stat-label">Занятые часы</p>
-          <p className="stat-value">{Math.round(totalBusyMinutes / 60)}</p>
-          <p className="stat-hint">по услугам</p>
-        </article>
-        <article className="stat-card">
-          <p className="stat-label">Буфер</p>
-          <p className="stat-value">{Math.round(totalBufferMinutes / 60)}</p>
-          <p className="stat-hint">подготовка</p>
-        </article>
-        <article className="stat-card">
-          <p className="stat-label">Недоступно</p>
-          <p className="stat-value">{Math.round(totalUnavailableMinutes / 60)}</p>
-          <p className="stat-hint">исключения</p>
-        </article>
         </div>
       ) : null}
 

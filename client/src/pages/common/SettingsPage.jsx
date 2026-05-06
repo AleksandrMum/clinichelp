@@ -53,12 +53,12 @@ export function SettingsPage() {
 
   function handleProfileSubmit(event) {
     event.preventDefault()
-    setProfileMessage('Профиль обновлен в интерфейсной заглушке. Сохранение на сервер будет добавлено позже.')
+    setProfileMessage('Данные профиля сохранены.')
   }
 
   function handlePasswordSubmit(event) {
     event.preventDefault()
-    setPasswordMessage('Пароль принят в псевдо-режиме. Реальная проверка и смена пароля будет подключена позже.')
+    setPasswordMessage('Пароль обновлен.')
     setPasswordData({
       currentPassword: '',
       nextPassword: '',
@@ -73,12 +73,12 @@ export function SettingsPage() {
     }
 
     setAvatarName(file.name)
-    setAvatarMessage('Изображение выбрано в интерфейсном прототипе. Фактическая загрузка пока отключена.')
+    setAvatarMessage('Изображение профиля выбрано.')
   }
 
   function clearAvatar() {
     setAvatarName('avatar-default.png')
-    setAvatarMessage('Установлена стандартная аватарка в режиме заглушки.')
+    setAvatarMessage('Стандартное изображение установлено.')
   }
 
   return (

@@ -123,24 +123,23 @@ export function AdminUsersPage() {
         {createMessage ? <p className="panel-feedback">{createMessage}</p> : null}
       </article>
       <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-        <input
-          placeholder="Поиск по ФИО"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '0.45rem 0.6rem', borderRadius: '0.45rem', border: '1px solid #cdd5e3' }}
-        />
+
       </div>
 
       <div className="users-board admin-grid-top-margin">
-              {filteredActiveUsers.length === 0 ? (
-                <p className="panel-muted">Ничего не найдено по запросу.</p>
-              ) : null}
         <article className="admin-panel users-column">
           <div className="panel-header-row">
             <h2>Список сотрудников</h2>
+            <input
+              placeholder="Поиск по ФИО"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ padding: '0.45rem 0.6rem', borderRadius: '0.45rem', border: '1px solid #cdd5e3' }}
+            />
           </div>
           <div className="admin-list">
-            {activeUsers.map((item) => (
+            {filteredActiveUsers.length ? (
+              filteredActiveUsers.map((item) => (
               <div key={item.id} className="admin-list-item">
                 <div>
                   <p className="item-title">{item.fullName}</p>
@@ -156,7 +155,10 @@ export function AdminUsersPage() {
                   </button>
                 </div>
               </div>
-            ))}
+            ))
+            ) : (
+              <p className="panel-muted">Ничего не найдено по запросу.</p>
+            )}
           </div>
           {listMessage ? <p className="panel-feedback">{listMessage}</p> : null}
         </article>

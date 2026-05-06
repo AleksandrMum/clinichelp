@@ -34,6 +34,6 @@ export const INITIAL_BRANCH = {
 }
 
 export const INITIAL_ASSIGNMENT = {
-  user: 'u-101',
+  user: '',
   branch: 'b-1',
 }
