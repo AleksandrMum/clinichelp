@@ -5,7 +5,7 @@ export function AdminAuditPage() {
   return (
     <section className="content-card admin-page">
       <h1>Аудит ИС</h1>
-      <p>Журнал действий в режиме чтения.</p>
+      <p>Просмотр журнала всех действий в системе.</p>
 
       <article className="admin-panel admin-panel-spaced">
         <h2>Логи системы</h2>

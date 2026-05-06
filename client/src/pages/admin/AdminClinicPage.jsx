@@ -19,19 +19,19 @@ export function AdminClinicPage() {
 
   function handleCreateBranch(event) {
     event.preventDefault()
-    setBranchMessage('Новый филиал добавлен в режим заглушки.')
+    setBranchMessage('Филиал добавлен.')
     setBranchForm(INITIAL_BRANCH)
   }
 
   function handleAttachUser(event) {
     event.preventDefault()
     if (distributionMode) {
-      setAssignmentMessage('Выбранные сотрудники привязаны к филиалу в режиме заглушки.')
+      setAssignmentMessage('Выбранные сотрудники привязаны к филиалу.')
       setDistributionMode(false)
       return
     }
 
-    setAssignmentMessage('Пользователь прикреплен к филиалу в режиме заглушки.')
+    setAssignmentMessage('Пользователь прикреплен к филиалу.')
     setAssignmentForm(INITIAL_ASSIGNMENT)
   }
 
@@ -47,12 +47,12 @@ export function AdminClinicPage() {
   }
 
   function handleCloseBranch(branchName) {
-    setBranchMessage(`Филиал ${branchName} отмечен как закрытый в режиме заглушки.`)
+    setBranchMessage(`Филиал ${branchName} закрыт.`)
   }
 
   function handleEditBranchSubmit(event) {
     event.preventDefault()
-    setBranchMessage('Изменения филиала сохранены в режиме заглушки.')
+    setBranchMessage('Изменения сохранены.')
     setIsEditModalOpen(false)
   }
 

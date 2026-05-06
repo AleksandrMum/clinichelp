@@ -13,13 +13,14 @@ export function AppointmentsPage() {
   const isDoctor = user?.role === ROLES.DOCTOR
   const isManager = user?.role === ROLES.MANAGER
   const [searchTerm, setSearchTerm] = useState('')
+  const [appointments, setAppointments] = useState(() => APPOINTMENTS)
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null)
   const [cardMessage, setCardMessage] = useState('')
 
   const filteredAppointments = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase()
 
-    return APPOINTMENTS.filter((appointment) => {
+    return appointments.filter((appointment) => {
       if (!normalized) return true
 
       const matchesName = appointment.patientName.toLowerCase().includes(normalized)
@@ -27,7 +28,7 @@ export function AppointmentsPage() {
 
       return matchesName || matchesDate
     })
-  }, [searchTerm])
+  }, [searchTerm, appointments])
 
   const selectedAppointment =
     filteredAppointments.find((apt) => apt.id === selectedAppointmentId) || null
@@ -54,6 +55,47 @@ export function AppointmentsPage() {
       currentId === appointment.id ? null : appointment.id
     )
     setCardMessage('')
+  }
+
+  function updateAppointmentStatus(nextStatus, confirmMessage, successMessage) {
+    if (!selectedAppointment) {
+      return
+    }
+
+    if (selectedAppointment.status === nextStatus) {
+      setCardMessage(successMessage)
+      return
+    }
+
+    const isConfirmed = window.confirm(confirmMessage)
+    if (!isConfirmed) {
+      return
+    }
+
+    setAppointments((currentAppointments) =>
+      currentAppointments.map((appointment) =>
+        appointment.id === selectedAppointment.id
+          ? { ...appointment, status: nextStatus }
+          : appointment,
+      ),
+    )
+    setCardMessage(successMessage)
+  }
+
+  function handleConfirmAppointment() {
+    updateAppointmentStatus(
+      'confirmed',
+      'Подтвердить запись? После подтверждения статус будет изменен на «Подтверждена».',
+      'Запись подтверждена.',
+    )
+  }
+
+  function handleCancelAppointment() {
+    updateAppointmentStatus(
+      'cancelled',
+      'Отменить запись? После подтверждения статус будет изменен на «Отменена».',
+      'Запись отменена.',
+    )
   }
 
   if (!isDoctor && !isManager) {
@@ -226,24 +268,58 @@ export function AppointmentsPage() {
               </label>
             </div>
 
+            {cardMessage ? (
+              <p className="panel-feedback" style={{ marginTop: '1rem' }}>
+                {cardMessage}
+              </p>
+            ) : null}
+
             {isManager ? (
               <div className="button-row" style={{ marginTop: '1rem' }}>
                 <button
                   type="button"
                   className="button-secondary"
-                  title="Изменить запись (в разработке)"
-                  disabled
+                  title="Изменить запись"
+                  onClick={() =>
+                    navigate('/manager/appointments/new', {
+                      state: { appointment: selectedAppointment },
+                    })
+                  }
                 >
                   Изменить
                 </button>
-                <button
-                  type="button"
-                  className="button-secondary"
-                  title="Отменить запись (в разработке)"
-                  disabled
-                >
-                  Отменить
-                </button>
+
+                {selectedAppointment.status === 'created' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      title="Подтвердить запись"
+                      onClick={handleConfirmAppointment}
+                    >
+                      Подтвердить
+                    </button>
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      title="Отменить запись"
+                      onClick={handleCancelAppointment}
+                    >
+                      Отменить
+                    </button>
+                  </>
+                ) : null}
+
+                {selectedAppointment.status === 'confirmed' ? (
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    title="Отменить запись"
+                    onClick={handleCancelAppointment}
+                  >
+                    Отменить
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </article>

@@ -20,7 +20,7 @@ export function AdminUsersPage() {
     const login = form.username.trim() || 'new.user'
     const tempPassword = `TMP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
-    setCreateMessage('Пользователь добавлен в режим заглушки.')
+    setCreateMessage('Пользователь создан.')
     setModalData({ login, tempPassword })
     setIsPasswordModalOpen(true)
     setForm(INITIAL_FORM)
@@ -148,10 +148,10 @@ export function AdminUsersPage() {
                   <p className="item-subtitle">Логин: {item.username}</p>
                 </div>
                 <div className="item-actions">
-                  <button type="button" className="button-secondary" onClick={() => handleUserAction(`Права пользователя ${item.fullName} изменены в режиме заглушки.`)}>
+                  <button type="button" className="button-secondary" onClick={() => handleUserAction(`Права пользователя ${item.fullName} изменены.`)}>
                     Изменить права
                   </button>
-                  <button type="button" className="button-secondary" onClick={() => handleUserAction(`Пользователь ${item.fullName} заблокирован в режиме заглушки.`)}>
+                  <button type="button" className="button-secondary" onClick={() => handleUserAction(`Пользователь ${item.fullName} заблокирован.`)}>
                     Заблокировать
                   </button>
                 </div>
@@ -179,7 +179,7 @@ export function AdminUsersPage() {
                     <p className="item-subtitle blocked-label">Заблокирован</p>
                   </div>
                   <div className="item-actions">
-                    <button type="button" className="button-secondary" onClick={() => handleUserAction(`Пользователь ${item.fullName} разблокирован в режиме заглушки.`)}>
+                    <button type="button" className="button-secondary" onClick={() => handleUserAction(`Пользователь ${item.fullName} разблокирован.`)}>
                       Разблокировать
                     </button>
                   </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
 import { ROLES } from '../../auth/roles'
 import { PlaceholderPage } from '../common/PlaceholderPage'
@@ -9,63 +9,89 @@ import { PATIENTS } from '../TEMP/patientsMocks'
 import { SERVICES } from '../TEMP/servicesMocks'
 import { DOCTORS, SERVICES_BY_ID } from '../TEMP/appointmentsMocks'
 
+function getDateValue(isoValue) {
+  return isoValue ? isoValue.slice(0, 10) : ''
+}
+
+function getTimeValue(isoValue) {
+  return isoValue ? isoValue.slice(11, 16) : ''
+}
+
+function buildInitialFormData(appointment) {
+  if (!appointment) {
+    return {
+      patientId: '',
+      patientName: '',
+      doctorId: '',
+      serviceId: '',
+      startDate: '',
+      startTime: '',
+      endTime: '',
+      comment: '',
+    }
+  }
+
+  return {
+    patientId: appointment.patientId || '',
+    patientName: appointment.patientName || '',
+    doctorId: appointment.doctorId || '',
+    serviceId: appointment.serviceId || '',
+    startDate: getDateValue(appointment.startAt),
+    startTime: getTimeValue(appointment.startAt),
+    endTime: getTimeValue(appointment.endAt),
+    comment: appointment.comment || '',
+  }
+}
+
+function calculateEndTime(startTime, serviceId) {
+  if (!startTime || !serviceId) {
+    return ''
+  }
+
+  const service = SERVICES_BY_ID[serviceId]
+  if (!service) {
+    return ''
+  }
+
+  const [hours, minutes] = startTime.split(':').map(Number)
+  const totalMinutes = hours * 60 + minutes + service.duration
+  const endHours = Math.floor(totalMinutes / 60)
+  const endMinutes = totalMinutes % 60
+
+  return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
+}
+
 export function ManagerCreateAppointmentPage() {
   const { user } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
   const isManager = user?.role === ROLES.MANAGER
+  const editingAppointment = location.state?.appointment || null
+  const isEditing = Boolean(editingAppointment)
 
   // Состояние формы
-  const [formData, setFormData] = useState({
-    patientId: '',
-    patientName: '',
-    doctorId: '',
-    serviceId: '',
-    startDate: '',
-    startTime: '',
-    endDate: '',
-    endTime: '',
-    comment: '',
-  })
+  const [formData, setFormData] = useState(() => buildInitialFormData(editingAppointment))
 
   const [validationMessage, setValidationMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Вспомогательная функция для форматирования даты в ISO
-  function formatDateToISO(dateStr) {
-    if (!dateStr) return ''
-    const [day, month, year] = dateStr.split('.').map(Number)
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  }
-
-  // Вспомогательная функция для преобразования ISO даты в DD.MM.YYYY
-  function formatDateFromISO(isoStr) {
-    if (!isoStr) return ''
-    const date = new Date(isoStr + 'T00:00:00')
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = date.getFullYear()
-    return `${day}.${month}.${year}`
-  }
-
-  // Автоматический расчет времени окончания при выборе услуги
   useEffect(() => {
-    if (formData.serviceId && formData.startTime) {
-      const service = SERVICES_BY_ID[formData.serviceId]
-      if (service) {
-        const [hours, minutes] = formData.startTime.split(':').map(Number)
-        const startMinutes = hours * 60 + minutes + service.duration
-        const endHours = Math.floor(startMinutes / 60)
-        const endMinutes = startMinutes % 60
-        const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
-        
-        setFormData((prev) => ({
-          ...prev,
-          endDate: prev.startDate, // По умолчанию та же дата
-          endTime,
-        }))
-      }
+    setFormData(buildInitialFormData(editingAppointment))
+    setValidationMessage('')
+    setSuccessMessage('')
+  }, [editingAppointment])
+
+  // Автоматический расчет времени окончания при выборе услуги или изменении времени начала
+  useEffect(() => {
+    const nextEndTime = calculateEndTime(formData.startTime, formData.serviceId)
+
+    if (nextEndTime && nextEndTime !== formData.endTime) {
+      setFormData((prev) => ({
+        ...prev,
+        endTime: nextEndTime,
+      }))
     }
-  }, [formData.serviceId, formData.startTime, formData.startDate])
+  }, [formData.serviceId, formData.startTime])
 
   // Обработчик выбора пациента
   function handlePatientSelect(e) {
@@ -105,27 +131,11 @@ export function ManagerCreateAppointmentPage() {
     }))
   }
 
-  // Обработчик изменения даты начала
+  // Обработчик изменения даты начала (ISO format)
   function handleStartDateChange(e) {
     setFormData((prev) => ({
       ...prev,
       startDate: e.target.value,
-    }))
-  }
-
-  // Обработчик изменения времени окончания (ручное редактирование)
-  function handleEndTimeChange(e) {
-    setFormData((prev) => ({
-      ...prev,
-      endTime: e.target.value,
-    }))
-  }
-
-  // Обработчик изменения даты окончания (ручное редактирование)
-  function handleEndDateChange(e) {
-    setFormData((prev) => ({
-      ...prev,
-      endDate: e.target.value,
     }))
   }
 
@@ -150,18 +160,14 @@ export function ManagerCreateAppointmentPage() {
       setValidationMessage('Пожалуйста, укажите дату и время начала')
       return
     }
-    if (!formData.endDate || !formData.endTime) {
-      setValidationMessage('Пожалуйста, укажите дату и время окончания')
+    if (!formData.endTime) {
+      setValidationMessage('Пожалуйста, проверьте время окончания')
       return
     }
 
     // Проверка что время окончания позже времени начала
-    const startDateTime = new Date(
-      `${formatDateToISO(formData.startDate)}T${formData.startTime}:00`
-    )
-    const endDateTime = new Date(
-      `${formatDateToISO(formData.endDate)}T${formData.endTime}:00`
-    )
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00`)
+    const endDateTime = new Date(`${formData.startDate}T${formData.endTime}:00`)
 
     if (endDateTime <= startDateTime) {
       setValidationMessage('Время окончания должно быть позже времени начала')
@@ -170,7 +176,11 @@ export function ManagerCreateAppointmentPage() {
 
     // Если все хорошо, показываем сообщение об успехе
     setValidationMessage('')
-    setSuccessMessage('Запись успешно создана! Сейчас вы вернетесь к списку.')
+    setSuccessMessage(
+      isEditing
+        ? 'Запись успешно обновлена! Сейчас вы вернетесь к списку.'
+        : 'Запись успешно создана! Сейчас вы вернетесь к списку.'
+    )
 
     // Симуляция сохранения (в реальном приложении здесь был бы API запрос)
     setTimeout(() => {
@@ -186,8 +196,12 @@ export function ManagerCreateAppointmentPage() {
     <section className="content-card doctor-page">
       <div className="doctor-page-head">
         <div>
-          <h1>Создание записи на прием</h1>
-          <p>Заполните форму для создания новой записи на прием пациента.</p>
+          <h1>{isEditing ? 'Редактирование записи на прием' : 'Создание записи на прием'}</h1>
+          <p>
+            {isEditing
+              ? 'Отредактируйте данные записи и сохраните изменения.'
+              : 'Заполните форму для создания новой записи на прием пациента.'}
+          </p>
         </div>
         <div className="doctor-head-actions">
           <button
@@ -238,55 +252,32 @@ export function ManagerCreateAppointmentPage() {
             </select>
           </label>
 
-          <label>
-            <span>Дата начала *</span>
-            <input
-              type="date"
-              value={formatDateToISO(formData.startDate) || ''}
-              onChange={(e) => {
-                const isoDate = e.target.value
-                const parts = isoDate.split('-')
-                const formatted = `${parts[2]}.${parts[1]}.${parts[0]}`
-                handleStartDateChange({ target: { value: formatted } })
-              }}
-              required
-            />
-          </label>
+          <div className="form-span-2 appointment-schedule-grid">
+            <label>
+              <span>Дата начала *</span>
+              <input
+                type="date"
+                defaultValue={formData.startDate}
+                onChange={handleStartDateChange}
+                required
+              />
+            </label>
 
-          <label>
-            <span>Время начала *</span>
-            <input
-              type="time"
-              value={formData.startTime}
-              onChange={handleStartTimeChange}
-              required
-            />
-          </label>
+            <label>
+              <span>Время начала *</span>
+              <input
+                type="time"
+                value={formData.startTime}
+                onChange={handleStartTimeChange}
+                required
+              />
+            </label>
 
-          <label>
-            <span>Дата окончания *</span>
-            <input
-              type="date"
-              value={formatDateToISO(formData.endDate) || ''}
-              onChange={(e) => {
-                const isoDate = e.target.value
-                const parts = isoDate.split('-')
-                const formatted = `${parts[2]}.${parts[1]}.${parts[0]}`
-                handleEndDateChange({ target: { value: formatted } })
-              }}
-              required
-            />
-          </label>
-
-          <label>
-            <span>Время окончания *</span>
-            <input
-              type="time"
-              value={formData.endTime}
-              onChange={handleEndTimeChange}
-              required
-            />
-          </label>
+            <label>
+              <span>Время окончания *</span>
+              <input type="time" value={formData.endTime} readOnly aria-readonly="true" />
+            </label>
+          </div>
 
           <label className="form-span-2">
             <span>Комментарий</span>
@@ -319,9 +310,7 @@ export function ManagerCreateAppointmentPage() {
         ) : null}
 
         <div className="button-row" style={{ marginTop: '1.5rem' }}>
-          <button type="submit">
-            Создать запись
-          </button>
+          <button type="submit">{isEditing ? 'Сохранить изменения' : 'Создать запись'}</button>
           <button
             type="button"
             className="button-secondary"
