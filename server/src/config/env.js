@@ -5,6 +5,10 @@ dotenv.config();
 module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 3000,
+  jwt: {
+    secret: process.env.JWT_SECRET || 'dev-only-change-me-in-env',
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+  },
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT) || 5432,

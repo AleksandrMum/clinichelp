@@ -1,8 +1,7 @@
+const { success } = require('../utils/api-response');
+
 function getHealth(req, res) {
-  res.status(200).json({
-    status: 'ok',
-    service: 'server'
-  });
+  return success(res, { status: 'ok', service: 'clinichelp-server' });
 }
 
 module.exports = {
