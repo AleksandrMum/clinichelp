@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: clinichelp
+    volumes:
+      - clinichelp_pg_data:/var/lib/postgresql/data
+    ports:
+      # Внешний порт 5433, чтобы не конфликтовать с локальным PostgreSQL на :5432
+      - '5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d clinichelp']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: clinichelp
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DIALECT: postgres
+      JWT_SECRET: clinichelp-docker-dev-secret-change-me
+      JWT_EXPIRES_IN: 24h
+      FIRST_ADMIN_LOGIN: admin
+      FIRST_ADMIN_PASSWORD: admin
+      FIRST_ADMIN_FULL_NAME: Docker Admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      [
+        'sh',
+        '-c',
+        'npm run db:migrate && npm run user:create-first-admin && npm start'
+      ]
+
+volumes:
+  clinichelp_pg_data:

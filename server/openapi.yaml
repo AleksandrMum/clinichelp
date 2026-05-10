@@ -1,0 +1,941 @@
+openapi: 3.0.3
+info:
+  title: ClinicHelp API
+  description: |
+    **Роли**
+    - **admin** — системный обзор; запись/изменение пользователей (Users API); чтение каталога и расписания; запись на приём только чтение там, где это разрешено роутами (список записей по врачу).
+    - **manager** — операционный CRUD: пациенты, услуги, расписание (rules/exceptions), создание и перенос записей, отмена.
+    - **doctor** — чтение каталога и расписания **только своего** `doctorId` (JWT `sub`); слоты только со своим `doctorId`; записи — список только себя; PATCH статуса/отмены только своих записей; перенос записей недоступен (только manager).
+
+    Используйте **Authorize** и Bearer JWT после `POST /api/auth/login`.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Локальный сервер (Docker или `npm start`)
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Users
+    description: 'Только роль «admin» (Users API).'
+  - name: Patients
+  - name: Services
+  - name: Schedule
+  - name: Slots
+  - name: Appointments
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Проверка живости сервиса
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Вход, получение JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Токен и профиль пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '401':
+          $ref: '#/components/responses/Error'
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Текущий пользователь по JWT
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '401':
+          $ref: '#/components/responses/Error'
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Выход (stateless; клиент удаляет токен)
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/users:
+    get:
+      tags: [Users]
+      summary: Список пользователей (фильтры query)
+      description: 'Только admin.'
+      parameters:
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [admin, manager, doctor]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: data — массив пользователей; meta — пагинация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    post:
+      tags: [Users]
+      summary: Создать пользователя
+      description: 'Только admin.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, login, password, role]
+              properties:
+                fullName:
+                  type: string
+                login:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  enum: [admin, manager, doctor]
+                phone:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Ресурс успешно создан (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      summary: Пользователь по id
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    patch:
+      tags: [Users]
+      summary: Обновить пользователя
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                login:
+                  type: string
+                phone:
+                  type: string
+                  nullable: true
+                role:
+                  type: string
+                  enum: [admin, manager, doctor]
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/users/{id}/password:
+    patch:
+      tags: [Users]
+      summary: Сменить пароль пользователя
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newPassword]
+              properties:
+                newPassword:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/users/{id}/deactivate:
+    patch:
+      tags: [Users]
+      summary: Деактивировать пользователя
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/patients:
+    get:
+      tags: [Patients]
+      summary: Поиск / список пациентов
+      description: |
+        **manager**, **doctor**, **admin**. У manager/admin опционально `includeArchived=true`.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: includeArchived
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    post:
+      tags: [Patients]
+      summary: Создать пациента
+      description: 'Только manager.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, phone]
+              properties:
+                fullName:
+                  type: string
+                phone:
+                  type: string
+                birthDate:
+                  type: string
+                  format: date
+                  nullable: true
+                notes:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Ресурс успешно создан (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/patients/{id}:
+    get:
+      tags: [Patients]
+      summary: Пациент по id
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    patch:
+      tags: [Patients]
+      summary: Обновить пациента
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                phone:
+                  type: string
+                birthDate:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/patients/{id}/archive:
+    patch:
+      tags: [Patients]
+      summary: Архивировать пациента
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/services:
+    get:
+      tags: [Services]
+      summary: Список услуг
+      description: Все три роли; врач видит только доступные услуги (логика сервиса).
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    post:
+      tags: [Services]
+      summary: Создать услугу
+      description: 'Только manager.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, durationMin, price]
+              properties:
+                name:
+                  type: string
+                durationMin:
+                  type: integer
+                  example: 30
+                price:
+                  type: number
+                  example: 2500
+      responses:
+        '201':
+          description: Ресурс успешно создан (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/services/{id}:
+    get:
+      tags: [Services]
+      summary: Услуга по id
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    patch:
+      tags: [Services]
+      summary: Обновить услугу
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                durationMin:
+                  type: integer
+                price:
+                  type: number
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/services/{id}/deactivate:
+    patch:
+      tags: [Services]
+      summary: Деактивировать услугу
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/schedule/doctors/{doctorId}/rules:
+    get:
+      tags: [Schedule]
+      summary: Правила недели врача
+      description: |
+        **manager**, **doctor**, **admin**. Для **doctor** `:doctorId` должен совпадать с JWT subject.
+      parameters:
+        - $ref: '#/components/parameters/DoctorId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+    put:
+      tags: [Schedule]
+      summary: Заменить все правила врача
+      description: 'Только manager. Тело — массив правил (weekday 1–7 пн–вс).'
+      parameters:
+        - $ref: '#/components/parameters/DoctorId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rules]
+              properties:
+                rules:
+                  type: array
+                  items:
+                    type: object
+                    required: [weekday, startTime, endTime]
+                    properties:
+                      weekday:
+                        type: integer
+                        minimum: 1
+                        maximum: 7
+                      startTime:
+                        type: string
+                        example: '09:00'
+                      endTime:
+                        type: string
+                        example: '18:00'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/schedule/doctors/{doctorId}/exceptions:
+    get:
+      tags: [Schedule]
+      summary: Исключения расписания врача
+      description: |
+        Чтение для всех ролей с тем же ограничением **doctor** по `:doctorId`.
+        У manager/admin опционально `includeArchived=true`.
+      parameters:
+        - $ref: '#/components/parameters/DoctorId'
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: includeArchived
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/schedule/exceptions:
+    post:
+      tags: [Schedule]
+      summary: Создать исключение (day_off / extra_shift)
+      description: 'Только manager.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [doctorId, startAt, endAt, exceptionType]
+              properties:
+                doctorId:
+                  type: string
+                  format: uuid
+                startAt:
+                  type: string
+                  format: date-time
+                endAt:
+                  type: string
+                  format: date-time
+                exceptionType:
+                  type: string
+                  enum: [day_off, extra_shift]
+                comment:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Ресурс успешно создан (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/schedule/exceptions/{id}:
+    patch:
+      tags: [Schedule]
+      summary: Обновить исключение
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startAt:
+                  type: string
+                  format: date-time
+                endAt:
+                  type: string
+                  format: date-time
+                exceptionType:
+                  type: string
+                  enum: [day_off, extra_shift]
+                comment:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/schedule/exceptions/{id}/archive:
+    patch:
+      tags: [Schedule]
+      summary: Архивировать исключение
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/schedule/doctors/{doctorId}/view:
+    get:
+      tags: [Schedule]
+      summary: Сводное представление расписания (агрегация на сервере)
+      description: 'Чтение; для doctor только свой doctorId (path-параметр).'
+      parameters:
+        - $ref: '#/components/parameters/DoctorId'
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/slots:
+    get:
+      tags: [Slots]
+      summary: Свободные слоты врача под услугу
+      description: |
+        **manager**, **doctor**, **admin**. Обязательные query: `doctorId`, `serviceId`, `from`, `to`.
+        Для **doctor** `doctorId` = JWT subject.
+        Опционально `durationMin` (по умолчанию длительность услуги).
+      parameters:
+        - in: query
+          name: doctorId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: serviceId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: durationMin
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: data — массив `{ startAt, endAt }`; meta может содержать count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '403':
+          $ref: '#/components/responses/Error'
+
+  /api/appointments/doctors/{doctorId}:
+    get:
+      tags: [Appointments]
+      summary: Записи врача (список с пагинацией)
+      description: |
+        **manager**, **doctor**, **admin**. Для **doctor** `:doctorId` = JWT subject.
+        Query: `status`, `from`, `to`, `page`, `limit`.
+      parameters:
+        - $ref: '#/components/parameters/DoctorId'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [created, confirmed, completed, cancelled]
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/appointments:
+    post:
+      tags: [Appointments]
+      summary: Создать запись на приём
+      description: 'Только manager. Поле booked_price фиксируется на момент создания.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, doctorId, serviceId, startAt]
+              properties:
+                patientId:
+                  type: string
+                  format: uuid
+                doctorId:
+                  type: string
+                  format: uuid
+                serviceId:
+                  type: string
+                  format: uuid
+                startAt:
+                  type: string
+                  format: date-time
+                  example: '2026-05-15T10:00:00.000Z'
+                comment:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Ресурс успешно создан (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '409':
+          description: Конфликт слота или недоступная услуга
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+
+  /api/appointments/{id}/status:
+    patch:
+      tags: [Appointments]
+      summary: Статус записи (вперёд по цепочке)
+      description: |
+        **manager** или **doctor** (только свои записи).
+        Разрешены переходы `created`→`confirmed`, `confirmed`→`completed`.
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, completed]
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/appointments/{id}/cancel:
+    patch:
+      tags: [Appointments]
+      summary: Отменить запись
+      description: 'manager или doctor (только свои записи). Нельзя для completed.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: Пациент отменил визит
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/appointments/{id}/reschedule:
+    patch:
+      tags: [Appointments]
+      summary: Перенести запись
+      description: 'Только manager.'
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [startAt]
+              properties:
+                startAt:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Успешный ответ (стандартный envelope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '403':
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Токен из `POST /api/auth/login` (поле `data.token`)
+
+  parameters:
+    UuidId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DoctorId:
+      name: doctorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    EnvelopeSuccess:
+      type: object
+      properties:
+        data:
+          description: Полезная нагрузка (объект или массив)
+          nullable: true
+        meta:
+          nullable: true
+        error:
+          description: При успешном ответе всегда null (нет объекта ошибки).
+          nullable: true
+      example:
+        data: {}
+        meta: null
+        error: null
+
+    EnvelopeError:
+      type: object
+      properties:
+        data:
+          description: При ошибке всегда null.
+          nullable: true
+        meta:
+          description: При ошибке всегда null.
+          nullable: true
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+            details:
+              nullable: true
+            requestId:
+              type: string
+              nullable: true
+
+  responses:
+    Error:
+      description: Ошибка (envelope)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeError'
+
+security:
+  - bearerAuth: []
