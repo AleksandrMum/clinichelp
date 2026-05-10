@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "db:smoke": "node src/scripts/db-smoke-test.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
@@ -15,7 +16,7 @@
     "sequelize",
     "postgres"
   ],
-  "author": "",
+  "author": "Mumladze Aleksandr Sergoevich",
   "license": "ISC",
   "description": "ClinicHelp backend starter (Node.js + Express + PostgreSQL + Sequelize)",
   "dependencies": {
