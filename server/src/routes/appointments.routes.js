@@ -10,6 +10,7 @@ const roleGuard = require('../middlewares/role-guard.middleware');
 const appointmentsDoctorScope = require('../middlewares/appointments-doctor-scope.middleware');
 const {
   listDoctorAppointments,
+  listDailyAppointments,
   createAppointment,
   updateAppointmentStatus,
   cancelAppointment,
@@ -23,6 +24,7 @@ appointmentsRouter.use(authMiddleware);
 const readRoles = roleGuard('manager', 'doctor', 'admin');
 
 appointmentsRouter.get('/doctors/:doctorId', readRoles, appointmentsDoctorScope(), listDoctorAppointments);
+appointmentsRouter.get('/daily', roleGuard('manager', 'admin'), listDailyAppointments);
 
 appointmentsRouter.post('/', roleGuard('manager'), createAppointment);
 

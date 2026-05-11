@@ -5,13 +5,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: clinichelp
+      LANG: ru_RU.utf8
+      POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=ru-RU"
     volumes:
       - clinichelp_pg_data:/var/lib/postgresql/data
     ports:
-      # Внешний порт 5433, чтобы не конфликтовать с локальным PostgreSQL на :5432
-      - '5433:5432'
+      - "5433:5432"
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d clinichelp']
+      test: ["CMD-SHELL", "pg_isready -U postgres -d clinichelp"]
       interval: 5s
       timeout: 5s
       retries: 12

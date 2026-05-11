@@ -7,6 +7,9 @@ info:
     - **manager** — операционный CRUD: пациенты, услуги, расписание (rules/exceptions), создание и перенос записей, отмена.
     - **doctor** — чтение каталога и расписания **только своего** `doctorId` (JWT `sub`); слоты только со своим `doctorId`; записи — список только себя; PATCH статуса/отмены только своих записей; перенос записей недоступен (только manager).
 
+    **Важно:** ФТ18 устарело. `admin` и `manager` остаются раздельными ролями.
+    Операционные сценарии (операционный CRUD) выполняет `manager`; `admin` не получает эти операции обратно.
+
     Используйте **Authorize** и Bearer JWT после `POST /api/auth/login`.
   version: 1.0.0
 
@@ -24,6 +27,8 @@ tags:
   - name: Schedule
   - name: Slots
   - name: Appointments
+  - name: Audit
+    description: 'Read-only журнал действий пользователей. Только admin.'
 
 paths:
   /api/health:
@@ -359,6 +364,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopeSuccess'
+
+  /api/patients/{id}/appointments:
+    get:
+      tags: [Patients]
+      summary: История записей пациента (compact/full)
+      description: |
+        Доступ: `manager`, `admin`, `doctor`.
+        Для роли `doctor` возвращаются только записи, где `doctor_id` совпадает с JWT subject.
+        Отменённые записи остаются в истории.
+      parameters:
+        - $ref: '#/components/parameters/UuidId'
+        - in: query
+          name: mode
+          description: '`compact` = последние 3 записи, `full` = пагинируемая история. По умолчанию `compact`.'
+          schema:
+            type: string
+            enum: [compact, full]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [created, confirmed, completed, cancelled]
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Для compact meta={ mode, count }. Для full meta содержит пагинацию.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
 
   /api/services:
     get:
@@ -744,6 +806,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopeSuccess'
 
+  /api/appointments/daily:
+    get:
+      tags: [Appointments]
+      summary: Список предстоящих записей на выбранный день
+      description: |
+        Доступ: `manager`, `admin`.
+        Поле `date` обязательно и задаётся в формате `YYYY-MM-DD` (любой выбранный день).
+        Endpoint предназначен для экрана напоминаний; записи со статусами `cancelled` и `completed` исключаются.
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2026-05-11'
+        - in: query
+          name: doctorId
+          description: Опциональный фильтр по врачу.
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Возвращает записи дня, сортировка startAt ASC.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+
   /api/appointments:
     post:
       tags: [Appointments]
@@ -863,6 +971,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopeSuccess'
         '403':
+          $ref: '#/components/responses/Error'
+
+  /api/audit:
+    get:
+      tags: [Audit]
+      summary: Журнал действий пользователей (read-only)
+      description: |
+        Доступ только для `admin`.
+        Источник данных — таблица аудита (`audit_log`) через текущий audit service/read model.
+        Ответ сгруппирован по дням: `[{ date, items: [...] }]`.
+      parameters:
+        - in: query
+          name: dateFrom
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: dateTo
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: userId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: actionType
+          schema:
+            type: string
+          example: APPOINTMENT_CREATED
+        - in: query
+          name: entityType
+          schema:
+            type: string
+          example: appointment
+        - in: query
+          name: entityId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Read-only список аудита с пагинацией и группировкой по дням.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccess'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '422':
           $ref: '#/components/responses/Error'
 
 components:

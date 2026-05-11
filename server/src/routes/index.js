@@ -7,6 +7,7 @@ const servicesRouter = require('./services.routes');
 const scheduleRouter = require('./schedule.routes');
 const appointmentsRouter = require('./appointments.routes');
 const slotsRouter = require('./slots.routes');
+const auditRouter = require('./audit.routes');
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/services', servicesRouter);
 router.use('/schedule', scheduleRouter);
 router.use('/appointments', appointmentsRouter);
 router.use('/slots', slotsRouter);
+router.use('/audit', auditRouter);
 
 module.exports = router;

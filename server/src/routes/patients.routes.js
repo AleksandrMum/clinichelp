@@ -12,6 +12,7 @@ const roleGuard = require('../middlewares/role-guard.middleware');
 const {
   listPatients,
   getPatientById,
+  listPatientAppointments,
   createPatient,
   updatePatient,
   archivePatient
@@ -23,6 +24,7 @@ patientsRouter.use(authMiddleware);
 
 patientsRouter.get('/', roleGuard('manager', 'doctor', 'admin'), listPatients);
 patientsRouter.get('/:id', roleGuard('manager', 'doctor', 'admin'), getPatientById);
+patientsRouter.get('/:id/appointments', roleGuard('manager', 'doctor', 'admin'), listPatientAppointments);
 patientsRouter.post('/', roleGuard('manager'), createPatient);
 patientsRouter.patch('/:id', roleGuard('manager'), updatePatient);
 patientsRouter.patch('/:id/archive', roleGuard('manager'), archivePatient);

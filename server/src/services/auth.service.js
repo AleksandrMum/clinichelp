@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { User } = require('../../db/models');
 const { AppError } = require('../common/errors/app-error');
 const { signAccessToken } = require('../utils/jwt');
+const auditService = require('./audit.service');
 
 const SAFE_USER_ATTRIBUTES = ['id', 'full_name', 'login', 'role', 'phone', 'is_active', 'deactivated_at', 'created_at', 'updated_at'];
 
@@ -40,6 +41,16 @@ class AuthService {
       id: user.id,
       role: user.role,
       login: user.login
+    });
+
+    await auditService.logEvent({
+      userId: user.id,
+      actionType: 'AUTH_LOGIN_SUCCESS',
+      entityType: 'auth',
+      entityId: user.id,
+      details: {
+        role: user.role
+      }
     });
 
     return {

@@ -1,4 +1,5 @@
 const patientService = require('../services/patient.service');
+const appointmentService = require('../services/appointment.service');
 const { success } = require('../utils/api-response');
 
 function parseBoolean(value) {
@@ -61,9 +62,26 @@ async function archivePatient(req, res, next) {
   }
 }
 
+async function listPatientAppointments(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { mode, page, limit, status, from, to } = req.query;
+    const result = await appointmentService.listPatientAppointments(
+      id,
+      { mode, page, limit, status, from, to },
+      req.user.role,
+      req.user.id
+    );
+    return success(res, result.items, result.meta);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   listPatients,
   getPatientById,
+  listPatientAppointments,
   createPatient,
   updatePatient,
   archivePatient

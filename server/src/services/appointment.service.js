@@ -32,6 +32,37 @@ const SAFE_APPOINTMENT_INCLUDES = [
   }
 ];
 
+const HISTORY_APPOINTMENT_INCLUDES = [
+  {
+    model: User,
+    as: 'doctor',
+    attributes: ['id', 'full_name']
+  },
+  {
+    model: Service,
+    as: 'service',
+    attributes: ['id', 'name', 'duration_min', 'price']
+  }
+];
+
+const DAILY_APPOINTMENT_INCLUDES = [
+  {
+    model: Patient,
+    as: 'patient',
+    attributes: ['id', 'full_name', 'phone']
+  },
+  {
+    model: User,
+    as: 'doctor',
+    attributes: ['id', 'full_name']
+  },
+  {
+    model: Service,
+    as: 'service',
+    attributes: ['id', 'name', 'duration_min', 'price']
+  }
+];
+
 function parseDateRequired(value, fieldName) {
   if (value === undefined || value === null || String(value).trim() === '') {
     throw AppError.badRequest(`${fieldName} is required`);
@@ -48,6 +79,27 @@ function parsePagination(query = {}) {
   const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 200);
   const offset = (page - 1) * limit;
   return { page, limit, offset };
+}
+
+function parseDateOnlyRequired(value, fieldName) {
+  const raw = nonEmptyTrimmedString(value, fieldName);
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) {
+    throw AppError.badRequest(`${fieldName} must be in YYYY-MM-DD format`, 'VALIDATION_ERROR');
+  }
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  const date = new Date(Date.UTC(y, mo, d));
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== y ||
+    date.getUTCMonth() !== mo ||
+    date.getUTCDate() !== d
+  ) {
+    throw AppError.badRequest(`${fieldName} must be a valid calendar date`, 'VALIDATION_ERROR');
+  }
+  return date;
 }
 
 /** Collect PostgreSQL error codes from Sequelize / node-postgres error chains. */
@@ -76,6 +128,68 @@ function assertDoctorActorScope(appointment, actorRole, actorUserId) {
 function mapRow(row) {
   if (!row) return null;
   return typeof row.toJSON === 'function' ? row.toJSON() : row;
+}
+
+function mapHistoryAppointment(row) {
+  const plain = mapRow(row);
+  return {
+    id: plain.id,
+    patientId: plain.patient_id,
+    doctorId: plain.doctor_id,
+    doctor: plain.doctor
+      ? {
+          id: plain.doctor.id,
+          fullName: plain.doctor.full_name
+        }
+      : null,
+    serviceId: plain.service_id,
+    service: plain.service
+      ? {
+          id: plain.service.id,
+          name: plain.service.name
+        }
+      : null,
+    startAt: plain.start_at,
+    endAt: plain.end_at,
+    status: plain.status,
+    bookedPrice: plain.booked_price,
+    comment: plain.comment,
+    cancelReason: plain.cancel_reason,
+    createdAt: plain.created_at,
+    updatedAt: plain.updated_at
+  };
+}
+
+function mapDailyAppointment(row) {
+  const plain = mapRow(row);
+  return {
+    id: plain.id,
+    startAt: plain.start_at,
+    endAt: plain.end_at,
+    status: plain.status,
+    bookedPrice: plain.booked_price,
+    patient: plain.patient
+      ? {
+          id: plain.patient.id,
+          fullName: plain.patient.full_name,
+          phone: plain.patient.phone
+        }
+      : null,
+    doctor: plain.doctor
+      ? {
+          id: plain.doctor.id,
+          fullName: plain.doctor.full_name
+        }
+      : null,
+    service: plain.service
+      ? {
+          id: plain.service.id,
+          name: plain.service.name,
+          durationMin: plain.service.duration_min,
+          price: plain.service.price
+        }
+      : null
+  };
 }
 
 class AppointmentService {
@@ -128,6 +242,115 @@ class AppointmentService {
     return {
       items: rows.map(mapRow),
       meta: {
+        page,
+        limit,
+        total: count,
+        pages: Math.ceil(count / limit) || 1
+      }
+    };
+  }
+
+  async listPatientAppointments(patientId, query = {}, actorRole, actorUserId) {
+    nonEmptyTrimmedString(patientId, 'patientId');
+    const patient = await Patient.findByPk(patientId, { attributes: ['id'] });
+    if (!patient) {
+      throw AppError.notFound('Patient not found');
+    }
+
+    const modeRaw = query.mode == null || String(query.mode).trim() === '' ? 'compact' : String(query.mode).trim();
+    if (!['compact', 'full'].includes(modeRaw)) {
+      throw AppError.badRequest('mode must be compact or full', 'VALIDATION_ERROR');
+    }
+
+    const where = { patient_id: patientId };
+    if (actorRole === 'doctor') {
+      where.doctor_id = actorUserId;
+    }
+
+    if (modeRaw === 'compact') {
+      const rows = await Appointment.findAll({
+        where,
+        include: HISTORY_APPOINTMENT_INCLUDES,
+        order: [['start_at', 'DESC']],
+        limit: 3
+      });
+      const items = rows.map(mapHistoryAppointment);
+      return {
+        items,
+        meta: {
+          mode: 'compact',
+          count: items.length
+        }
+      };
+    }
+
+    if (query.status != null && String(query.status).trim() !== '') {
+      const status = nonEmptyTrimmedString(query.status, 'status');
+      if (!APPOINTMENT_STATUSES.includes(status)) {
+        throw AppError.badRequest(`status must be one of: ${APPOINTMENT_STATUSES.join(', ')}`, 'VALIDATION_ERROR');
+      }
+      where.status = status;
+    }
+
+    let fromD = null;
+    let toD = null;
+    if (query.from != null && query.from !== '') fromD = parseDateRequired(query.from, 'from');
+    if (query.to != null && query.to !== '') toD = parseDateRequired(query.to, 'to');
+    if (fromD && toD && fromD.getTime() > toD.getTime()) {
+      throw AppError.badRequest('from must be before or equal to to', 'VALIDATION_ERROR');
+    }
+    if (fromD) where.start_at = { ...where.start_at, [Op.gte]: fromD };
+    if (toD) where.start_at = { ...where.start_at, [Op.lte]: toD };
+
+    const { page, limit, offset } = parsePagination(query);
+    const { rows, count } = await Appointment.findAndCountAll({
+      where,
+      include: HISTORY_APPOINTMENT_INCLUDES,
+      order: [['start_at', 'DESC']],
+      limit,
+      offset
+    });
+
+    return {
+      items: rows.map(mapHistoryAppointment),
+      meta: {
+        mode: 'full',
+        page,
+        limit,
+        total: count,
+        pages: Math.ceil(count / limit) || 1
+      }
+    };
+  }
+
+  async listDailyAppointments(query = {}) {
+    const selectedDate = parseDateOnlyRequired(query.date, 'date');
+    const dayStart = selectedDate;
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+
+    const where = {
+      start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
+      status: { [Op.notIn]: ['cancelled', 'completed'] }
+    };
+
+    if (query.doctorId != null && String(query.doctorId).trim() !== '') {
+      where.doctor_id = nonEmptyTrimmedString(query.doctorId, 'doctorId');
+    }
+
+    const { page, limit, offset } = parsePagination(query);
+    const { rows, count } = await Appointment.findAndCountAll({
+      where,
+      include: DAILY_APPOINTMENT_INCLUDES,
+      order: [['start_at', 'ASC']],
+      limit,
+      offset
+    });
+
+    return {
+      items: rows.map(mapDailyAppointment),
+      meta: {
+        selectedDate: dayStart.toISOString().slice(0, 10),
+        count: rows.length,
         page,
         limit,
         total: count,

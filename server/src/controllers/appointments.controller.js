@@ -18,6 +18,16 @@ async function listDoctorAppointments(req, res, next) {
   }
 }
 
+async function listDailyAppointments(req, res, next) {
+  try {
+    const { date, doctorId, page, limit } = req.query;
+    const result = await appointmentService.listDailyAppointments({ date, doctorId, page, limit });
+    return success(res, result.items, result.meta);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function createAppointment(req, res, next) {
   try {
     const row = await appointmentService.createAppointment(req.body, req.user.id);
@@ -69,6 +79,7 @@ async function rescheduleAppointment(req, res, next) {
 
 module.exports = {
   listDoctorAppointments,
+  listDailyAppointments,
   createAppointment,
   updateAppointmentStatus,
   cancelAppointment,
