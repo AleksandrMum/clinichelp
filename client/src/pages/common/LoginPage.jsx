@@ -9,17 +9,18 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const onSubmit = (event) => {
+  const onSubmit = async (event) => {
     event.preventDefault()
+    setError('')
 
-    const loggedUser = login(username, password)
-
-    if (!loggedUser) {
-      setError('Неверный логин или пароль.')
-      return
+    try {
+      await login(username, password)
+      navigate('/home')
+    } catch (err) {
+      const message =
+        err.response?.data?.error?.message || err.message || 'Неверный логин или пароль.'
+      setError(message)
     }
-
-    navigate('/home')
   }
 
   return (
@@ -57,10 +58,6 @@ export function LoginPage() {
       <button className="link-button" type="button">
         Сбросить пароль
       </button>
-
-      <p className="hint-text">
-        Доступные учетные записи: admin/admin, doctor/doctor, manager/manager.
-      </p>
     </section>
   )
 }

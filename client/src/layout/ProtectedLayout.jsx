@@ -5,7 +5,11 @@ import { Header } from '../components/Header'
 import { Sidebar } from '../components/Sidebar'
 
 export function ProtectedLayout() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, authReady } = useAuth()
+
+  if (!authReady) {
+    return null
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
