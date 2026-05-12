@@ -10,6 +10,7 @@ export function mapApiUserToClient(apiUser) {
     username: apiUser.login,
     fullName: apiUser.full_name ?? apiUser.fullName ?? '',
     role: apiUser.role,
+    phone: apiUser.phone ?? null,
   }
 }
 
@@ -33,3 +34,10 @@ export async function postLogout() {
 }
 
 export const logout = postLogout
+
+export async function changeMyPassword({ currentPassword, newPassword }) {
+  const { data } = await api.patch('/auth/password', { currentPassword, newPassword }, {
+    skipAuthInterceptor: true,
+  })
+  return data
+}

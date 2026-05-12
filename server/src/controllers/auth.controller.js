@@ -28,8 +28,22 @@ async function logout(req, res, next) {
   }
 }
 
+async function changeMyPassword(req, res, next) {
+  try {
+    const result = await authService.changeMyPassword(
+      req.user.id,
+      req.body?.currentPassword,
+      req.body?.newPassword
+    );
+    return success(res, result);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   login,
   me,
-  logout
+  logout,
+  changeMyPassword
 };

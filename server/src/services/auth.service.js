@@ -76,6 +76,48 @@ class AuthService {
     return mapUser(user);
   }
 
+  async changeMyPassword(userId, currentPassword, newPassword) {
+    if (!currentPassword || !newPassword) {
+      throw AppError.badRequest('currentPassword and newPassword are required');
+    }
+    if (String(newPassword).length < 6) {
+      throw AppError.badRequest('newPassword must be at least 6 characters');
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw AppError.notFound('User not found');
+    }
+    if (!user.is_active) {
+      throw AppError.forbidden('Account is deactivated', 'ACCOUNT_DISABLED');
+    }
+
+    const ok = await bcrypt.compare(String(currentPassword), user.password_hash);
+    if (!ok) {
+      throw AppError.unauthorized('Current password is incorrect');
+    }
+
+    const { sequelize } = require('../../db/models');
+    const passwordHash = await bcrypt.hash(String(newPassword), 10);
+
+    return sequelize.transaction(async (transaction) => {
+      await user.update({ password_hash: passwordHash }, { transaction });
+
+      await auditService.logEvent(
+        {
+          userId,
+          actionType: 'USER_PASSWORD_CHANGED',
+          entityType: 'user',
+          entityId: userId,
+          details: { selfChange: true }
+        },
+        { transaction }
+      );
+
+      return { ok: true };
+    });
+  }
+
   async logout() {
     return { ok: true };
   }

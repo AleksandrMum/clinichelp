@@ -9,7 +9,6 @@ const INITIAL_FORM = {
   role: 'manager',
   phone: '+7',
   email: '',
-  branch: 'main',
   department: '',
   position: '',
   note: '',
@@ -252,39 +251,8 @@ export function AdminUsersPage() {
           </label>
 
           <label>
-            Основной филиал
-            <select
-              value={form.branch}
-              onChange={(event) => updateField('branch', event.target.value)}
-            >
-              <option value="main">Центральный филиал</option>
-              <option value="lenina">Филиал на Ленина, 8</option>
-              <option value="gagarina">Филиал на Гагарина, 14</option>
-            </select>
-          </label>
-
-          <label>
             Телефон
             <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} />
-          </label>
-
-          <label>
-            Email
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) => updateField('email', event.target.value)}
-              placeholder="mail@clinichelp.ru"
-            />
-          </label>
-
-          <label>
-            Должность
-            <input
-              value={form.position}
-              onChange={(event) => updateField('position', event.target.value)}
-              placeholder="Старший администратор"
-            />
           </label>
 
           <div className="button-row form-span-2">

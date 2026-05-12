@@ -16,7 +16,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status
-    if (status === 401 || status === 403) {
+    const skipGlobalLogout = error.config?.skipAuthInterceptor
+    if ((status === 401 || status === 403) && !skipGlobalLogout) {
       localStorage.clear()
       if (window.location.pathname !== '/login') {
         window.location.assign('/login')

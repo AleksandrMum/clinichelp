@@ -24,9 +24,8 @@ export const NAVIGATION_BY_ROLE = {
   ],
   [ROLES.ADMIN]: [
     { label: 'Главная', to: '/home' },
-    { label: 'Клиника', to: '/admin/clinic', exact: true },
-    { label: 'Пользователи', to: '/admin/clinic/users' },
-    { label: 'Аудит', to: '/admin/clinic/audit' },
+    { label: 'Пользователи', to: '/admin/users' },
+    { label: 'Аудит', to: '/admin/audit' },
     { label: 'Настройки', to: '/settings' },
   ],
 }

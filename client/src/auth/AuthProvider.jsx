@@ -76,6 +76,21 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const refreshUser = async () => {
+    try {
+      const envelope = await getMe()
+      const mapped = mapApiUserToClient(envelope.data)
+      setUser(mapped)
+      if (mapped) {
+        localStorage.setItem('user', JSON.stringify(mapped))
+        localStorage.setItem('role', mapped.role)
+      }
+      return mapped
+    } catch {
+      return null
+    }
+  }
+
   const value = useMemo(
     () => ({
       user,
@@ -83,6 +98,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(user),
       login,
       logout,
+      refreshUser,
     }),
     [user, authReady],
   )

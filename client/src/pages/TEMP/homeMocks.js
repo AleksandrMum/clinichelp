@@ -1,9 +1,8 @@
 // ВРЕМЕННЫЕ ЗАГЛУШКИ: данные для панели главной страницы.
 // Удалить перед подключением реального бэкенда.
 export const ADMIN_STATS = [
-  { label: 'Филиалы', value: '3', hint: '2 активных, 1 в работе', to: '/admin/clinic' },
-  { label: 'Пользователи', value: '18', hint: '14 активных, 4 заблокированных', to: '/admin/clinic/users' },
-  { label: 'События аудита', value: '124', hint: 'за последние 24 часа', to: '/admin/clinic/audit' },
+  { label: 'Пользователи', value: '18', hint: '14 активных, 4 заблокированных', to: '/admin/users' },
+  { label: 'События аудита', value: '124', hint: 'за последние 24 часа', to: '/admin/audit' },
 ]
 
 export const MANAGER_STATS = [
@@ -21,15 +20,14 @@ export const DOCTOR_STATS = [
 ]
 
 export const ADMIN_SHORTCUTS = [
-  { title: 'Управление клиникой', text: 'Филиалы, прикрепление, структура площадок', to: '/admin/clinic' },
-  { title: 'Пользователи', text: 'Создание, блокировка, роли и восстановление доступа', to: '/admin/clinic/users' },
-  { title: 'Аудит', text: 'Последние действия и журнал событий', to: '/admin/clinic/audit' },
+  { title: 'Пользователи', text: 'Создание, блокировка, роли и восстановление доступа', to: '/admin/users' },
+  { title: 'Аудит', text: 'Последние действия и журнал событий', to: '/admin/audit' },
 ]
 
 export const MANAGER_SHORTCUTS = [
   { title: 'Пациенты', text: 'Поиск, карточки и создание новых обращений', to: '/manager/patients' },
   { title: 'Расписание', text: 'Просмотр сетки и свободных слотов', to: '/manager/schedule' },
-  { title: 'Клиника', text: 'Услуги, филиалы и рабочая структура', to: '/manager/clinic' },
+  { title: 'Клиника', text: 'Услуги и рабочая структура', to: '/manager/clinic' },
 ]
 
 export const DOCTOR_SHORTCUTS = [

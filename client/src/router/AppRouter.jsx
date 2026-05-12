@@ -4,7 +4,6 @@ import { ROLES } from '../auth/roles'
 import { ProtectedLayout } from '../layout/ProtectedLayout'
 import { PublicLayout } from '../layout/PublicLayout'
 import { AdminAuditPage } from '../pages/admin/AdminAuditPage'
-import { AdminClinicPage } from '../pages/admin/AdminClinicPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
 import { AppointmentsPage } from '../pages/common/AppointmentsPage'
 import { ForbiddenPage } from '../pages/common/ForbiddenPage'
@@ -149,15 +148,7 @@ export function AppRouter() {
         />
 
         <Route
-          path="/admin/clinic"
-          element={
-            <RoleRoute roles={[ROLES.ADMIN]}>
-              <AdminClinicPage />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/admin/clinic/users"
+          path="/admin/users"
           element={
             <RoleRoute roles={[ROLES.ADMIN]}>
               <AdminUsersPage />
@@ -165,7 +156,7 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/admin/clinic/audit"
+          path="/admin/audit"
           element={
             <RoleRoute roles={[ROLES.ADMIN]}>
               <AdminAuditPage />
