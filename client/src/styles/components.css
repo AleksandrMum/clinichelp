@@ -429,12 +429,9 @@ button:hover {
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  padding: 0.6rem 0;
-}
-
-.schedule-legend {
+  padding: 0.3rem 0;
   border-bottom: 1px solid #e5ecf5;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0;
 }
 
 .filter-chip {

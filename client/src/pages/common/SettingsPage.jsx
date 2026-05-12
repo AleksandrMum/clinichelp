@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import { ROLE_LABELS } from '../../auth/roles'
-import { getMe, changeMyPassword } from '../../services/auth'
-import { updateUser } from '../../services/users'
+import { getMe, changeMyPassword, updateMyProfile } from '../../services/auth'
 
 function extractApiError(err) {
   return err.response?.data?.error?.message || err.message || 'Произошла ошибка'
@@ -85,7 +84,7 @@ export function SettingsPage() {
 
     setProfileSaving(true)
     try {
-      const env = await updateUser(user.id, {
+      const env = await updateMyProfile({
         fullName: fullName.trim(),
         phone: phone.trim() || null,
       })

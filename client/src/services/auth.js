@@ -41,3 +41,10 @@ export async function changeMyPassword({ currentPassword, newPassword }) {
   })
   return data
 }
+
+export async function updateMyProfile({ fullName, phone }) {
+  const { data } = await api.patch('/auth/profile', { fullName, phone }, {
+    skipAuthInterceptor: true,
+  })
+  return data
+}

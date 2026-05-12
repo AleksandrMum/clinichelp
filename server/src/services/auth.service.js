@@ -118,6 +118,46 @@ class AuthService {
     });
   }
 
+  async updateMyProfile(userId, payload) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw AppError.notFound('User not found');
+    }
+    if (!user.is_active) {
+      throw AppError.forbidden('Account is deactivated', 'ACCOUNT_DISABLED');
+    }
+
+    const patch = {};
+    if (payload.fullName !== undefined) {
+      const trimmed = String(payload.fullName).trim();
+      if (!trimmed) throw AppError.badRequest('fullName must not be empty');
+      patch.full_name = trimmed;
+    }
+    if (payload.phone !== undefined) {
+      patch.phone = payload.phone ? String(payload.phone).trim() : null;
+    }
+
+    if (Object.keys(patch).length === 0) {
+      throw AppError.badRequest('No fields to update');
+    }
+
+    const { sequelize } = require('../../db/models');
+    return sequelize.transaction(async (transaction) => {
+      await user.update(patch, { transaction });
+      await auditService.logEvent(
+        {
+          userId,
+          actionType: 'USER_UPDATED',
+          entityType: 'user',
+          entityId: userId,
+          details: { selfUpdate: true, changedFields: Object.keys(patch) }
+        },
+        { transaction }
+      );
+      return mapUser(user);
+    });
+  }
+
   async logout() {
     return { ok: true };
   }

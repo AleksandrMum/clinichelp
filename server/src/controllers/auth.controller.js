@@ -41,9 +41,19 @@ async function changeMyPassword(req, res, next) {
   }
 }
 
+async function updateMyProfile(req, res, next) {
+  try {
+    const result = await authService.updateMyProfile(req.user.id, req.body);
+    return success(res, result);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   login,
   me,
   logout,
-  changeMyPassword
+  changeMyPassword,
+  updateMyProfile
 };

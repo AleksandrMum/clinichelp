@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createPatient } from '../../services/patients'
 
 const INITIAL_FORM = {
+  full_name: '',
+  phone: '',
+  birth_date: '',
+  notes: '',
+}
+
+const EMPTY_ERRORS = {
   full_name: '',
   phone: '',
   birth_date: '',
@@ -42,12 +50,7 @@ function formatPhone(value) {
 }
 
 function validate(values) {
-  const errors = {
-    full_name: '',
-    phone: '',
-    birth_date: '',
-    notes: '',
-  }
+  const errors = { ...EMPTY_ERRORS }
 
   if (!values.full_name.trim()) {
     errors.full_name = 'Укажите ФИО пациента.'
@@ -60,10 +63,6 @@ function validate(values) {
     errors.phone = 'Телефон должен содержать 11 цифр.'
   }
 
-  if (!values.birth_date) {
-    errors.birth_date = 'Укажите дату рождения.'
-  }
-
   if (values.notes.length > 1000) {
     errors.notes = 'Заметка не должна превышать 1000 символов.'
   }
@@ -71,71 +70,77 @@ function validate(values) {
   return errors
 }
 
+function extractApiError(err) {
+  return err.response?.data?.error?.message || err.message || 'Произошла ошибка'
+}
+
 export function ManagerCreatePatientPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState(INITIAL_FORM)
-  const [errors, setErrors] = useState({
-    full_name: '',
-    phone: '',
-    birth_date: '',
-    notes: '',
-  })
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [savedPayload, setSavedPayload] = useState(null)
+  const [errors, setErrors] = useState({ ...EMPTY_ERRORS })
+  const [saving, setSaving] = useState(false)
+  const [apiError, setApiError] = useState('')
+  const [createdPatient, setCreatedPatient] = useState(null)
 
   const canSubmit = useMemo(
     () =>
+      !saving &&
       form.full_name.trim() &&
-      form.phone.replace(/\D/g, '').length === 11 &&
-      form.birth_date,
-    [form],
+      form.phone.replace(/\D/g, '').length === 11,
+    [form, saving],
   )
 
   function handleChange(event) {
     const { name, value } = event.target
     const nextValue = name === 'phone' ? formatPhone(value) : value
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: nextValue,
-    }))
+    setForm((prev) => ({ ...prev, [name]: nextValue }))
 
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }))
     }
+    if (apiError) setApiError('')
+    if (createdPatient) setCreatedPatient(null)
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    setIsSubmitted(true)
+    setApiError('')
+    setCreatedPatient(null)
 
     const nextErrors = validate(form)
     setErrors(nextErrors)
 
-    const hasErrors = Object.values(nextErrors).some(Boolean)
-    if (hasErrors) {
-      setSavedPayload(null)
-      return
-    }
+    if (Object.values(nextErrors).some(Boolean)) return
 
-    setSavedPayload({
-      full_name: form.full_name.trim(),
-      phone: form.phone,
-      birth_date: form.birth_date,
-      notes: form.notes.trim(),
-    })
+    setSaving(true)
+    try {
+      const env = await createPatient({
+        fullName: form.full_name.trim(),
+        phone: form.phone.trim(),
+        birthDate: form.birth_date || null,
+        notes: form.notes.trim() || null,
+      })
+
+      if (env?.error) {
+        setApiError(env.error.message || 'Не удалось создать пациента')
+      } else {
+        setCreatedPatient(env.data)
+        setForm(INITIAL_FORM)
+        setErrors({ ...EMPTY_ERRORS })
+      }
+    } catch (err) {
+      setApiError(extractApiError(err))
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleReset() {
     setForm(INITIAL_FORM)
-    setErrors({
-      full_name: '',
-      phone: '',
-      birth_date: '',
-      notes: '',
-    })
-    setSavedPayload(null)
-    setIsSubmitted(false)
+    setErrors({ ...EMPTY_ERRORS })
+    setApiError('')
+    setCreatedPatient(null)
   }
 
   return (
@@ -214,22 +219,28 @@ export function ManagerCreatePatientPage() {
 
           <div className="button-row form-span-2">
             <button type="submit" disabled={!canSubmit}>
-              Сохранить пациента
+              {saving ? 'Сохранение…' : 'Сохранить пациента'}
             </button>
             <button type="button" className="button-secondary" onClick={handleReset}>
               Очистить форму
             </button>
           </div>
 
-          {isSubmitted && !savedPayload ? (
-            <p className="panel-feedback form-span-2">
-              Не удалось сохранить. Проверьте обязательные поля и корректность телефона.
-            </p>
-          ) : null}
+          {apiError ? <p className="error-text form-span-2">{apiError}</p> : null}
 
-          {savedPayload ? (
+          {createdPatient ? (
             <div className="form-span-2">
-              <p className="panel-feedback">Пациент добавлен.</p>
+              <p className="panel-feedback">
+                Пациент «{createdPatient.full_name}» успешно создан.
+              </p>
+              <button
+                type="button"
+                className="button-secondary"
+                style={{ marginTop: '0.5rem' }}
+                onClick={() => navigate('/manager/patients')}
+              >
+                Перейти к списку
+              </button>
             </div>
           ) : null}
         </form>
