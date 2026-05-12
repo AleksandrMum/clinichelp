@@ -487,6 +487,60 @@ button:hover {
   background: #fff0d9;
 }
 
+.rules-compact-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  font-size: 0.93rem;
+  color: #2e374a;
+}
+
+.rules-compact-item strong {
+  color: #1f5fb8;
+  margin-right: 0.25rem;
+}
+
+.rules-edit-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rules-edit-day {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.rules-edit-day-label {
+  min-width: 100px;
+  font-weight: 600;
+  font-size: 0.93rem;
+  padding-top: 0.35rem;
+  color: #2e374a;
+}
+
+.rules-edit-intervals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rules-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rules-edit-row input[type="time"] {
+  border: 1px solid #cdd5e3;
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.9rem;
+  width: 110px;
+}
+
 .patient-list,
 .history-list {
   display: grid;
@@ -684,6 +738,137 @@ button:hover {
   color: #0f4ca4;
   font-size: 1.45rem;
   font-weight: 700;
+}
+
+.apt-day-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+}
+
+.apt-day-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cdd5e3;
+  border-radius: 0.4rem;
+  background: #ffffff;
+  color: #2e374a;
+  cursor: pointer;
+  min-width: 56px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.apt-day-tab:hover { background: #eef4ff; border-color: #5b9aef; color: #1f5fb8; }
+
+.apt-day-tab.active { background: #1f5fb8; color: #ffffff; border-color: #1f5fb8; }
+
+.apt-day-tab-name { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+.apt-day-tab-date { font-size: 0.78rem; }
+
+.apt-timeline-wrap {
+  display: flex;
+  gap: 0;
+  border: 1px solid #dce2ec;
+  border-radius: 0.45rem;
+  overflow: hidden;
+}
+
+.apt-timeline-hours {
+  flex: 0 0 52px;
+  background: #f6f8fc;
+  border-right: 1px solid #dce2ec;
+}
+
+.apt-timeline-hour-label {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 2px;
+  font-size: 0.75rem;
+  color: #7a8699;
+  box-sizing: border-box;
+}
+
+.apt-timeline-body {
+  flex: 1;
+  position: relative;
+  background: #ffffff;
+}
+
+.apt-tl-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.apt-tl-avail {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 0.35rem;
+  background: rgba(223, 244, 231, 0.55);
+  border: 1px solid rgba(161, 214, 181, 0.8);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.apt-tl-busy {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 0.35rem;
+  background: rgba(255, 200, 195, 0.6);
+  border: 1px solid rgba(210, 130, 120, 0.7);
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  padding: 2px 6px;
+  overflow: hidden;
+}
+
+.apt-tl-busy-label {
+  font-size: 0.72rem;
+  color: #6b2020;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apt-tl-selected {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 0.35rem;
+  background: rgba(31, 95, 184, 0.2);
+  border: 2px solid #1f5fb8;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.slot-chip {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cdd5e3;
+  border-radius: 0.4rem;
+  background: #ffffff;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.slot-chip:hover {
+  background: #eef4ff;
+  border-color: #5b9aef;
+}
+
+.slot-chip.selected {
+  background: #1f5fb8;
+  color: #ffffff;
+  border-color: #1f5fb8;
 }
 
 .auth-form {

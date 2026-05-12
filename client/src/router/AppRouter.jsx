@@ -17,7 +17,7 @@ import { ManagerClinicPage } from '../pages/manager/ManagerClinicPage'
 import { ManagerCreateAppointmentPage } from '../pages/manager/ManagerCreateAppointmentPage'
 import { ManagerCreatePatientPage } from '../pages/manager/ManagerCreatePatientPage'
 import { ManagerEditSchedulePage } from '../pages/manager/ManagerEditSchedulePage'
-import { ManagerScheduleExceptionsPage } from '../pages/manager/ManagerScheduleExceptionsPage'
+import { ManagerDoctorSchedulePage } from '../pages/manager/ManagerDoctorSchedulePage'
 import { ManagerServicesPage } from '../pages/manager/ManagerServicesPage'
 
 function RoleRoute({ roles, children }) {
@@ -122,10 +122,10 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/manager/clinic/schedule-exceptions"
+          path="/manager/clinic/doctor-schedule"
           element={
             <RoleRoute roles={[ROLES.MANAGER]}>
-              <ManagerScheduleExceptionsPage />
+              <ManagerDoctorSchedulePage />
             </RoleRoute>
           }
         />

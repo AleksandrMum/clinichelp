@@ -46,7 +46,7 @@ function formatItemLine(item) {
   const at = item.occurredAt ? new Date(item.occurredAt) : null
   const time =
     at && !Number.isNaN(at.getTime())
-      ? at.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'medium' })
+      ? at.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'UTC' })
       : '—'
   const who = item.user?.login || item.user?.fullName || item.userId || '—'
   const entity = [item.entityType, item.entityId].filter(Boolean).join(':') || '—'

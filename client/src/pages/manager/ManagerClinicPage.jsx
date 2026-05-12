@@ -40,15 +40,15 @@ export function ManagerClinicPage() {
         <button
           type="button"
           className="manager-clinic-card"
-          onClick={() => navigate('/manager/clinic/schedule-exceptions')}
+          onClick={() => navigate('/manager/clinic/doctor-schedule')}
         >
           <div className="manager-clinic-card-header">
             <h3 className="manager-clinic-card-title">
-              Исключения расписания
+              График врача
             </h3>
           </div>
           <p className="manager-clinic-card-text">
-            Управление временными недоступностями врачей: болезни, отпуска, обучение.
+            Еженедельные правила и разовые исключения расписания врачей.
           </p>
         </button>
       </div>

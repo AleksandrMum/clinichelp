@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import { ROLES } from '../../auth/roles'
-import { getDoctorScheduleView, getDoctorAppointments } from '../../services/schedule'
+import { getDoctorScheduleView, getDoctorAppointments, listDoctors } from '../../services/schedule'
 import { PlaceholderPage } from './PlaceholderPage'
 
 const HOUR_HEIGHT = 46
@@ -101,35 +101,30 @@ function buildWeekDays(monday, rules, exceptions) {
       return [st, en]
     })
 
+    const dayStartUtc = new Date(dateKey + 'T00:00:00.000Z')
+    const dayEndUtc = new Date(dateKey + 'T23:59:59.999Z')
+
     const dayExceptions = exceptions.filter((ex) => {
       const exStart = new Date(ex.start_at)
       const exEnd = new Date(ex.end_at)
-      const dayStart = new Date(date)
-      dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(date)
-      dayEnd.setHours(23, 59, 59, 999)
-      return exStart <= dayEnd && exEnd >= dayStart
+      return exStart <= dayEndUtc && exEnd >= dayStartUtc
     })
 
     for (const ex of dayExceptions) {
       if (ex.exception_type === 'day_off') {
         const exStart = new Date(ex.start_at)
         const exEnd = new Date(ex.end_at)
-        const dayStart = new Date(date)
-        dayStart.setHours(0, 0, 0, 0)
-        const dayEnd = new Date(date)
-        dayEnd.setHours(23, 59, 59, 999)
 
-        if (exStart <= dayStart && exEnd >= dayEnd) {
+        if (exStart <= dayStartUtc && exEnd >= dayEndUtc) {
           windows = []
         }
       } else if (ex.exception_type === 'extra_shift') {
         const exStart = new Date(ex.start_at)
         const exEnd = new Date(ex.end_at)
-        const h1 = String(exStart.getHours()).padStart(2, '0')
-        const m1 = String(exStart.getMinutes()).padStart(2, '0')
-        const h2 = String(exEnd.getHours()).padStart(2, '0')
-        const m2 = String(exEnd.getMinutes()).padStart(2, '0')
+        const h1 = String(exStart.getUTCHours()).padStart(2, '0')
+        const m1 = String(exStart.getUTCMinutes()).padStart(2, '0')
+        const h2 = String(exEnd.getUTCHours()).padStart(2, '0')
+        const m2 = String(exEnd.getUTCMinutes()).padStart(2, '0')
         windows.push([`${h1}:${m1}`, `${h2}:${m2}`])
       }
     }
@@ -148,16 +143,16 @@ function appointmentToEvent(apt) {
   const startAt = new Date(apt.start_at)
   const endAt = new Date(apt.end_at)
 
-  const startTime = `${String(startAt.getHours()).padStart(2, '0')}:${String(startAt.getMinutes()).padStart(2, '0')}`
-  const endTime = `${String(endAt.getHours()).padStart(2, '0')}:${String(endAt.getMinutes()).padStart(2, '0')}`
-  const dateKey = formatDateKey(startAt)
+  const startTime = `${String(startAt.getUTCHours()).padStart(2, '0')}:${String(startAt.getUTCMinutes()).padStart(2, '0')}`
+  const endTime = `${String(endAt.getUTCHours()).padStart(2, '0')}:${String(endAt.getUTCMinutes()).padStart(2, '0')}`
+  const dateKey = `${startAt.getUTCFullYear()}-${String(startAt.getUTCMonth() + 1).padStart(2, '0')}-${String(startAt.getUTCDate()).padStart(2, '0')}`
 
   return {
     id: apt.id,
     date: dateKey,
     start: startTime,
     end: endTime,
-    status: apt.status === 'cancelled' ? 'unavailable' : 'busy',
+    status: 'busy',
     title: apt.service?.name ?? 'Приём',
     patient: apt.patient?.full_name ?? null,
     patientPhone: apt.patient?.phone ?? null,
@@ -224,10 +219,80 @@ function clampEventToDisplayRange(events) {
     .filter(Boolean)
 }
 
+function DoctorSelect({ doctors, doctorsLoading, selectedValue, onSelect }) {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [hoveredIndex, setHoveredIndex] = useState(-1)
+
+  const selectedItem = useMemo(
+    () => doctors.find((d) => d.id === selectedValue) || null,
+    [doctors, selectedValue],
+  )
+
+  useEffect(() => {
+    setQuery(selectedItem ? selectedItem.full_name : '')
+  }, [selectedItem, selectedValue])
+
+  const filteredItems = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    if (!normalized) return doctors
+    const matched = doctors.filter((d) => d.full_name.toLowerCase().includes(normalized))
+    if (selectedItem && !matched.some((d) => d.id === selectedItem.id)) {
+      return [selectedItem, ...matched]
+    }
+    return matched
+  }, [doctors, query, selectedItem])
+
+  if (doctorsLoading) return <p className="panel-muted">Загрузка списка врачей…</p>
+
+  return (
+    <label className="autocomplete-field">
+      <span>Врач</span>
+      <div className="autocomplete-root">
+        <input
+          value={query}
+          placeholder="Выберите врача"
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
+          onChange={(e) => { setQuery(e.target.value); setIsOpen(true); setHoveredIndex(-1) }}
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+        />
+        {isOpen ? (
+          <ul className="autocomplete-menu" role="listbox">
+            {filteredItems.length ? (
+              filteredItems.map((d, index) => (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    className={index === hoveredIndex ? 'autocomplete-option active' : 'autocomplete-option'}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(-1)}
+                    onMouseDown={(e) => { e.preventDefault(); onSelect(d); setQuery(d.full_name); setIsOpen(false); setHoveredIndex(-1) }}
+                  >
+                    {d.full_name}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="autocomplete-empty">Врачи не найдены</li>
+            )}
+          </ul>
+        ) : null}
+      </div>
+    </label>
+  )
+}
+
 export function SchedulePage() {
   const { user } = useAuth()
   const isDoctor = user?.role === ROLES.DOCTOR
   const isManager = user?.role === ROLES.MANAGER
+
+  const [doctors, setDoctors] = useState([])
+  const [doctorsLoading, setDoctorsLoading] = useState(false)
+  const [selectedDoctorId, setSelectedDoctorId] = useState('')
 
   const [monday, setMonday] = useState(() => getMonday(new Date()))
   const [weekDays, setWeekDays] = useState([])
@@ -239,15 +304,26 @@ export function SchedulePage() {
   const [selectedEventId, setSelectedEventId] = useState('')
   const [scheduleMessage, setScheduleMessage] = useState('')
 
-  const doctorId = isDoctor ? user?.id : null
+  const doctorId = isDoctor ? user?.id : selectedDoctorId || null
+
+  useEffect(() => {
+    if (!isManager) return
+    let cancelled = false
+    setDoctorsLoading(true)
+    listDoctors()
+      .then((env) => { if (!cancelled) setDoctors(env.data ?? []) })
+      .catch(() => { if (!cancelled) setDoctors([]) })
+      .finally(() => { if (!cancelled) setDoctorsLoading(false) })
+    return () => { cancelled = true }
+  }, [isManager])
 
   const loadSchedule = useCallback(async () => {
     if (!doctorId) return
     setLoading(true)
     setError('')
     try {
-      const from = formatDateKey(monday) + 'T00:00:00'
-      const to = formatDateKey(addDays(monday, 7)) + 'T00:00:00'
+      const from = formatDateKey(monday) + 'T00:00:00.000Z'
+      const to = formatDateKey(addDays(monday, 7)) + 'T00:00:00.000Z'
 
       const [viewEnv, aptsEnv] = await Promise.all([
         getDoctorScheduleView(doctorId, { from, to }),
@@ -262,7 +338,7 @@ export function SchedulePage() {
       const days = buildWeekDays(monday, rules, exceptions)
       setWeekDays(days)
 
-      const mapped = appointments.map(appointmentToEvent)
+      const mapped = appointments.filter((a) => a.status !== 'cancelled').map(appointmentToEvent)
       setEvents(clampEventToDisplayRange(mapped))
 
       if (days.length > 0 && !days.find((d) => d.date === focusedDayKey)) {
@@ -305,6 +381,21 @@ export function SchedulePage() {
   const selectedEvent = selectedEventId
     ? events.find((e) => e.id === selectedEventId) || null
     : null
+
+  const selectedDoctorName = useMemo(() => {
+    if (isDoctor) return null
+    return doctors.find((d) => d.id === selectedDoctorId)?.full_name ?? null
+  }, [isDoctor, doctors, selectedDoctorId])
+
+  function handleSelectDoctor(doctor) {
+    setSelectedDoctorId(doctor.id)
+    setWeekDays([])
+    setEvents([])
+    setFocusedDayKey('')
+    setSelectedEventId('')
+    setScheduleMessage('')
+    setError('')
+  }
 
   function goPrevWeek() {
     setMonday((prev) => addDays(prev, -7))
@@ -354,45 +445,59 @@ export function SchedulePage() {
     return <PlaceholderPage title="Расписание" />
   }
 
-  if (isManager) {
-    return (
-      <section className="content-card doctor-page">
-        <div className="doctor-page-head">
-          <div>
-            <h1>Расписание</h1>
-            <p>Общая недельная сетка с выбором врача.</p>
-          </div>
-        </div>
-        <article className="admin-panel">
-          <p className="panel-muted">
-            Расписание менеджера будет подключено в следующей задаче. Используйте раздел «Записи на приём» для управления записями.
-          </p>
-        </article>
-      </section>
-    )
-  }
+  const pageTitle = isDoctor ? 'Моё расписание' : 'Расписание'
+  const pageSubtitle = isDoctor
+    ? 'Недельная сетка вашего рабочего расписания и записей на приём.'
+    : 'Просмотр недельного расписания врачей.'
+  const hasDoctorSelected = Boolean(doctorId)
 
   return (
     <section className="content-card doctor-page">
       <div className="doctor-page-head">
         <div>
-          <h1>Моё расписание</h1>
-          <p>Недельная сетка вашего рабочего расписания и записей на приём.</p>
+          <h1>{pageTitle}</h1>
+          <p>{pageSubtitle}</p>
         </div>
 
-        <div className="doctor-head-actions schedule-nav">
-          <button type="button" className="button-secondary" onClick={goPrevWeek}>←</button>
-          <button type="button" className="button-secondary" onClick={goToday}>Сегодня</button>
-          <button type="button" className="button-secondary" onClick={goNextWeek}>→</button>
-          <span className="panel-muted">{formatRangeLabel(monday)}</span>
-        </div>
+        {hasDoctorSelected ? (
+          <div className="doctor-head-actions schedule-nav">
+            <button type="button" className="button-secondary" onClick={goPrevWeek}>←</button>
+            <button type="button" className="button-secondary" onClick={goToday}>Сегодня</button>
+            <button type="button" className="button-secondary" onClick={goNextWeek}>→</button>
+            <span className="panel-muted">{formatRangeLabel(monday)}</span>
+          </div>
+        ) : null}
       </div>
+
+      {isManager ? (
+        <div className="doctor-toolbar">
+          <div style={{ maxWidth: '360px' }}>
+            <DoctorSelect
+              doctors={doctors}
+              doctorsLoading={doctorsLoading}
+              selectedValue={selectedDoctorId}
+              onSelect={handleSelectDoctor}
+            />
+          </div>
+          {selectedDoctorName ? (
+            <span className="panel-muted" style={{ alignSelf: 'flex-end' }}>
+              {selectedDoctorName}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {isManager && !selectedDoctorId ? (
+        <p className="panel-muted">Выберите врача, чтобы просмотреть его расписание.</p>
+      ) : null}
 
       {error ? <p className="error-text">{error}</p> : null}
 
-      {loading ? (
+      {hasDoctorSelected && loading ? (
         <p className="panel-muted">Загрузка расписания…</p>
-      ) : (
+      ) : null}
+
+      {hasDoctorSelected && !loading ? (
         <>
           <div className="schedule-legend">
             <span>
@@ -400,9 +505,6 @@ export function SchedulePage() {
             </span>
             <span>
               <i className="legend-dot busy" /> Занято
-            </span>
-            <span>
-              <i className="legend-dot unavailable" /> Недоступно / Отменено
             </span>
           </div>
 
@@ -450,7 +552,7 @@ export function SchedulePage() {
                 {weekRows.map((day, dayIndex) => (
                   <div
                     key={day.date}
-                    className={day.windows.length === 0 ? 'day-column off' : 'day-column'}
+                    className="day-column"
                     style={{
                       '--hour-height': DAY_LINE_HEIGHT,
                       height: `${VISIBLE_HOURS * HOUR_HEIGHT}px`,
@@ -572,7 +674,7 @@ export function SchedulePage() {
             </p>
           </article>
         </>
-      )}
+      ) : null}
     </section>
   )
 }

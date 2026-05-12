@@ -365,7 +365,7 @@ export function ManagerServicesPage() {
                     </p>
                     {selectedService.deactivated_at ? (
                       <p className="item-subtitle">
-                        Деактивирована: {new Date(selectedService.deactivated_at).toLocaleDateString('ru-RU')}
+                        Деактивирована: {new Date(selectedService.deactivated_at).toLocaleDateString('ru-RU', { timeZone: 'UTC' })}
                       </p>
                     ) : null}
                   </div>

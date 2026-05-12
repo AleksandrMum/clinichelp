@@ -13,13 +13,13 @@ const {
 const usersRouter = Router();
 
 usersRouter.use(authMiddleware);
-usersRouter.use(roleGuard('admin'));
 
-usersRouter.get('/', listUsers);
-usersRouter.get('/:id', getUserById);
-usersRouter.post('/', createUser);
-usersRouter.patch('/:id', updateUser);
-usersRouter.patch('/:id/password', changePassword);
-usersRouter.patch('/:id/deactivate', deactivateUser);
+usersRouter.get('/', roleGuard('admin', 'manager'), listUsers);
+usersRouter.get('/:id', roleGuard('admin', 'manager'), getUserById);
+
+usersRouter.post('/', roleGuard('admin'), createUser);
+usersRouter.patch('/:id', roleGuard('admin'), updateUser);
+usersRouter.patch('/:id/password', roleGuard('admin'), changePassword);
+usersRouter.patch('/:id/deactivate', roleGuard('admin'), deactivateUser);
 
 module.exports = usersRouter;

@@ -280,17 +280,6 @@
     );
 }
 
-.day-column.off {
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      #f6f8fc 0,
-      #f6f8fc calc(var(--hour-height) - 1px),
-      #e9eef6 calc(var(--hour-height) - 1px),
-      #e9eef6 var(--hour-height)
-    );
-}
-
 .day-hour-grid {
   position: absolute;
   inset: 0;
@@ -308,8 +297,6 @@
   z-index: 1;
   pointer-events: none;
 }
-
-/* Окна доступности в дне расписания */
 
 .schedule-toolbar-row {
   display: flex;

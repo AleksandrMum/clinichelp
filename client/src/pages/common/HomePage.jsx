@@ -1,8 +1,26 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
 import { ROLES } from '../../auth/roles'
-// TEMP: временные заглушки данных для интерфейса — удалить при подключении реального бэкенда
-import { ADMIN_STATS, MANAGER_STATS, DOCTOR_STATS, ADMIN_SHORTCUTS, MANAGER_SHORTCUTS, DOCTOR_SHORTCUTS } from '../TEMP/homeMocks'
+
+const ADMIN_SHORTCUTS = [
+  { title: 'Пользователи', to: '/admin/users', text: 'Управление учётными записями сотрудников.' },
+  { title: 'Аудит', to: '/admin/audit', text: 'Журнал действий пользователей в системе.' },
+  { title: 'Настройки', to: '/settings', text: 'Настройки вашего профиля.' },
+]
+
+const MANAGER_SHORTCUTS = [
+  { title: 'Пациенты', to: '/manager/patients', text: 'Список пациентов и создание новых записей.' },
+  { title: 'Записи на приём', to: '/manager/appointments', text: 'Управление записями на приём.' },
+  { title: 'Расписание', to: '/manager/schedule', text: 'Просмотр расписания врачей.' },
+  { title: 'Услуги', to: '/manager/clinic/services', text: 'Управление услугами клиники.' },
+  { title: 'График врача', to: '/manager/clinic/doctor-schedule', text: 'Правила и исключения расписания врачей.' },
+]
+
+const DOCTOR_SHORTCUTS = [
+  { title: 'Расписание', to: '/doctor/schedule', text: 'Ваше недельное расписание и записи на приём.' },
+  { title: 'Пациенты', to: '/doctor/patients', text: 'Список ваших пациентов.' },
+  { title: 'Настройки', to: '/settings', text: 'Настройки вашего профиля.' },
+]
 
 export function HomePage() {
   const { user } = useAuth()

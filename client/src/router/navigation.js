@@ -11,7 +11,7 @@ export const NAVIGATION_BY_ROLE = {
       to: '/manager/clinic',
       submenu: [
         { label: 'Услуги', to: '/manager/clinic/services' },
-        { label: 'Исключения расписания', to: '/manager/clinic/schedule-exceptions' },
+        { label: 'График врача', to: '/manager/clinic/doctor-schedule' },
       ],
     },
     { label: 'Настройки', to: '/settings' },
